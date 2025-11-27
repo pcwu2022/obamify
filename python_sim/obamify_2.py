@@ -4,11 +4,11 @@ import random
 import json
 import matplotlib.pyplot as plt
 
-N = 1000
-M = 1000
+N = 10000
+M = 100
 W = 100
 H = 100
-MAX_LENGTH = 3
+MAX_LENGTH = 5
 
 INPUT_SOURCE = './input/bob.png'
 INPUT_TARGETS = ['./input/bill.png', './input/obama.png']

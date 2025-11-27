@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 N = 1000
 M = 1000
-W = 100
-H = 100
+W = 128
+H = 128
 MAX_LENGTH = 5
 
 INPUT_SOURCE = './input/bob.png'
