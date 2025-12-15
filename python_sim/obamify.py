@@ -5,17 +5,18 @@ import json
 import matplotlib.pyplot as plt
 
 N = 1000
-M = 1000
-W = 128
-H = 128
+M = 10000
+W = 256
+H = 256
 MAX_LENGTH = 5
+TARGET_LOSS_DISCOUNT = 0.8
 
-INPUT_SOURCE = './input/bob.png'
-INPUT_TARGETS = ['./input/bill.png']
+INPUT_SOURCE = './input/fk.png'
+INPUT_TARGETS = ['./input/obama.png']
 OUTPUT_FILE = './output/obamified.png'
 
-img_source = Image.open(INPUT_SOURCE).resize((W, H))
-img_target = Image.open(INPUT_TARGETS[0]).resize((W, H))
+img_source = Image.open(INPUT_SOURCE).resize((W, H)).convert('RGB')
+img_target = Image.open(INPUT_TARGETS[0]).resize((W, H)).convert('RGB')
 source = asarray(img_source).copy()
 target = asarray(img_target).copy()
 
@@ -33,18 +34,30 @@ def reconstruct(normalized_array, mean, std):
     return (normalized_array * std + mean).astype('uint8')
 
 def loss_pixel(s, t, i, j, k, l):
-    global W, H
-    rgba_s = s[i, j]
-    loss = 0
-    rgba_t = t[k, l]
-    pixel_diff = rgba_s - rgba_t
-    
-    dist_sq = ((i - k)**2 + (j - l)**2)**2
-    dist_pixel = pixel_diff[0]**2 + pixel_diff[1]**2 + pixel_diff[2]**2 
-    
-    loss += (dist_sq + dist_pixel) / ((W**2 + H**2)**2 + 3*256**2)
+    rgb_s = s[i, j]
+    rgb_t = t[k, l]
+    pixel_diff = rgb_s - rgb_t
+    loss = pixel_diff[0]**2 + pixel_diff[1]**2 + pixel_diff[2]**2 
             
-    return loss / (W * H)
+    return loss
+
+def random_pixel_best_move(s, t, i, j):
+    global W, H, MAX_LENGTH
+    movements = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+    l_i = random.randint(1, MAX_LENGTH)
+    l_j = random.randint(1, MAX_LENGTH)
+    di, dj = movements[random.randint(0, 3)]
+
+    k = i + di * l_i
+    l = j + dj * l_j
+    if k < 0 or k >= W or l < 0 or l >= H: return 0, 0, 0
+    loss_old = loss_pixel(s, t, i, j, i, j) + loss_pixel(s, t, k, l, k, l) * TARGET_LOSS_DISCOUNT
+    loss_new = loss_pixel(s, t, i, j, k, l) + loss_pixel(s, t, k, l, i, j) * TARGET_LOSS_DISCOUNT
+    
+    loss_diff = loss_new - loss_old
+    if loss_diff <= 0: return di * l_i, dj * l_j, loss_diff
+    return 0, 0, 0
 
 def pixel_best_move(s, t, i, j):
     global W, H, MAX_LENGTH
@@ -58,36 +71,26 @@ def pixel_best_move(s, t, i, j):
                 k = i + di * l_i
                 l = j + dj * l_j
                 if k < 0 or k >= W or l < 0 or l >= H: continue
-                loss_old = loss_pixel(s, t, i, j, k, l)
-                temp_val_ij = s[i, j].copy() 
-                temp_val_kl = s[k, l].copy()
-                s[i, j] = temp_val_kl
-                s[k, l] = temp_val_ij
-                loss_new = loss_pixel(s, t, i, j, k, l)
-                temp_val_ij = s[i, j].copy() 
-                temp_val_kl = s[k, l].copy()
-                s[i, j] = temp_val_kl
-                s[k, l] = temp_val_ij
+                loss_old = loss_pixel(s, t, i, j, i, j) + loss_pixel(s, t, k, l, k, l) * TARGET_LOSS_DISCOUNT
+                loss_new = loss_pixel(s, t, i, j, k, l) + loss_pixel(s, t, k, l, i, j) * TARGET_LOSS_DISCOUNT
                 
                 loss_diff = loss_new - loss_old
-                if loss_diff > best_loss_diff: 
+                if loss_diff <= best_loss_diff: 
                     best_loss_diff = loss_diff
                     best_move = (di * l_i, dj * l_j)
             
     return best_move[0], best_move[1], best_loss_diff
 
-total_loss = 0
 # Replace saving normalized float array (which causes KeyError) with a denormalized uint8 image
 obamified_image = Image.fromarray(reconstruct(source, source_mean, source_std))
 obamified_image.save(OUTPUT_FILE)
+losses = []
 for epoch in range(N):
-    print(f"Epoch {epoch}: loss = {total_loss}")
     sum_loss = 0
-
     for m in range(M):
         i = random.randint(0, W - 1)
         j = random.randint(0, H - 1)
-        di, dj, loss = pixel_best_move(source, target, i, j)
+        di, dj, loss = random_pixel_best_move(source, target, i, j)
         k = i + di
         l = j + dj
         sum_loss += loss
@@ -100,4 +103,8 @@ for epoch in range(N):
     obamified_image.save(OUTPUT_FILE)
 
     if sum_loss == 0: break
-    total_loss += sum_loss / M
+    losses.append(sum_loss / M)
+    print(f"Epoch {epoch}: loss = {sum_loss / M}")
+    plt.clf()
+    plt.plot(losses)
+    plt.savefig("output/loss.png")
