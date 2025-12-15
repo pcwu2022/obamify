@@ -1,6 +1,4 @@
 from PIL import Image
-import random
-import json
 import matplotlib.pyplot as plt
 
 # Configuration and constants
@@ -61,19 +59,60 @@ def Camera(file_path, width=W, height=H):
 	encoded = [[encode_pixel(nested[x][y]) for y in range(height)] for x in range(width)]
 	return encoded
 
-def VGA(source, output_file=OUTPUT_FILE, width=W, height=H):
-	nested = [[decode_pixel(source[x][y]) for y in range(H)] for x in range(W)]
+
+class SRAM:
+	def __init__(self, nested, width=W, height=H):
+		self.width = width
+		self.height = height
+		# store a deep copy so original nested can be discarded
+		self.mem = [[list(nested[x][y]) for y in range(height)] for x in range(width)]
+
+	def getItem(self, i, j):
+		return list(self.mem[i][j])
+
+	def setItem(self, i, j, value):
+		self.mem[i][j] = list(value)
+
+
+class PRNG:
+	def __init__(self, seed=1):
+		# xorshift32 state must be non-zero
+		self.state = (int(seed) & 0xFFFFFFFF) or 1
+
+	def setseed(self, seed):
+		self.state = (int(seed) & 0xFFFFFFFF) or 1
+
+	def next(self):
+		# xorshift32
+		x = self.state
+		x ^= (x << 13) & 0xFFFFFFFF
+		x ^= (x >> 17) & 0xFFFFFFFF
+		x ^= (x << 5) & 0xFFFFFFFF
+		self.state = x & 0xFFFFFFFF
+		return self.state
+
+	def randint(self, low, high):
+		if high < low:
+			raise ValueError('high must be >= low')
+		r = self.next()
+		# avoid modulo bias for very small ranges by using simple mod
+		return low + (r % (high - low + 1))
+
+
+# global deterministic RNG instance
+RNG = PRNG(1)
+def setseed(seed):
+	RNG.setseed(seed)
+
+def VGA(output_file=OUTPUT_FILE, width=W, height=H):
+	# read from global SRAM_S
+	nested = [[decode_pixel(SRAM_S.getItem(x, y)) for y in range(H)] for x in range(W)]
 	# Accepts nested uint8 original-style pixels and saves image to disk
 	data = []
 	loss_image = []
-	total_loss = 0
-	loss_is_zero_count = 0
 	for y in range(height):
 		for x in range(width):
 			r, g, b, l = nested[x][y]
-			total_loss += l
-			if l == 0:
-				loss_is_zero_count += 1
 			data.append((clamp_uint8(r), clamp_uint8(g), clamp_uint8(b)))
 			loss_image.append((l, l, l))
 
@@ -83,100 +122,88 @@ def VGA(source, output_file=OUTPUT_FILE, width=W, height=H):
 	loss_img = Image.new('RGB', (width, height))
 	loss_img.putdata(loss_image)
 	loss_img.save(output_file.replace('.png', '_loss.png'))
-	print(f"Average loss of current obamified image: {total_loss // (width * height)}")
-	print(f"Pixels with zero loss: {loss_is_zero_count} / {width * height}")
     
 
 """ Obamify Algorithm """
 
-def loss_pixel(s, t, i, j, k, l):
-	# s,t are normalized (encoded) nested arrays; return small uint8 loss
-	rgb_s = s[i][j]
-	rgb_t = t[k][l]
+def loss_pixel(i, j, k, l):
+	# return small uint8 loss between SRAM_S(i,j) and SRAM_T(k,l)
+	rgb_s = SRAM_S.getItem(i, j)
+	rgb_t = SRAM_T.getItem(k, l)
 	d0 = int(rgb_s[0]) - int(rgb_t[0])
 	d1 = int(rgb_s[1]) - int(rgb_t[1])
 	d2 = int(rgb_s[2]) - int(rgb_t[2])
 	sq = (d0 * d0 + d1 * d1 + d2 * d2) // 256
 	return clamp_uint8(sq)
-	# absum = abs(d0) + abs(d1) + abs(d2)
-	# return clamp_uint8(absum // 4)
 
-def init_loss(s, t):
+def init_loss():
 	for i in range(W):
 		for j in range(H):
-			s[i][j][3] = loss_pixel(s, t, i, j, i, j)
+			p = SRAM_S.getItem(i, j)
+			p[3] = loss_pixel(i, j, i, j)
+			SRAM_S.setItem(i, j, p)
 
-def random_swap(s, t, i, j):
+def random_swap(i, j):
 	movements = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-	l_i = random.randint(1, MAX_LENGTH)
-	l_j = random.randint(1, MAX_LENGTH)
-	di, dj = movements[random.randint(0, 3)]
+	l_i = RNG.randint(1, MAX_LENGTH)
+	l_j = RNG.randint(1, MAX_LENGTH)
+	idx = RNG.randint(0, 3)
+	di, dj = movements[idx]
 	k = i + di * l_i
 	l = j + dj * l_j
 	if k < 0 or k >= W or l < 0 or l >= H:
 		return 0, 0, 0
-	loss_old = s[i][j][3] + s[k][l][3]
-	# loss_old = loss_pixel(s, t, i, j, i, j) + loss_pixel(s, t, k, l, k, l)
-	loss_move_forward = loss_pixel(s, t, i, j, k, l)
-	loss_move_reverse = loss_pixel(s, t, k, l, i, j)
+	# compute old loss by reading stored loss bytes
+	p_i = SRAM_S.getItem(i, j)
+	p_k = SRAM_S.getItem(k, l)
+	loss_old = int(p_i[3]) + int(p_k[3])
+	loss_move_forward = loss_pixel(i, j, k, l)
+	loss_move_reverse = loss_pixel(k, l, i, j)
 	loss_new = loss_move_forward + loss_move_reverse
 	if loss_new <= loss_old:
-		s[i][j][3] = clamp_uint8(loss_move_reverse)
-		s[k][l][3] = clamp_uint8(loss_move_forward)
-		for c in range(3): # not swapping loss channel
-			s[i][j][c], s[k][l][c] = s[k][l][c], s[i][j][c]
+		# assign losses corresponding to the colors that will end up at each position
+		# after the swap: the color originally at (k,l) moves to (i,j), so
+		# SRAM_S[i,j].loss should be loss_move_reverse; and vice-versa.
+		p_i[3] = clamp_uint8(loss_move_reverse)
+		p_k[3] = clamp_uint8(loss_move_forward)
+		# swap RGB channels
+		for c in range(3):
+			p_i[c], p_k[c] = p_k[c], p_i[c]
+		SRAM_S.setItem(i, j, p_i)
+		SRAM_S.setItem(k, l, p_k)
 		return di * l_i, dj * l_j, clamp_uint8(loss_new)
 	return 0, 0, loss_old
 
-def rand_cdf_6(max_i):
-	i = random.randint(0, 6 * max_i - 1)
-	if i < max_i:
-		return i // 4
-	if i < 5 * max_i:
-		return i // 8 + max_i // 8
-	return i // 4 - max_i // 2
-
-def rand_cdf_14(max_i):
-	i = random.randint(0, 14 * max_i - 1)
-	if i < max_i:
-		return i // 8
-	if i < 13 * max_i:
-		return i // 16 + max_i // 16
-	return i // 8 - max_i * 3 // 4
 
 def run_obamify(source_file=INPUT_SOURCE, target_file=INPUT_TARGETS[0], output_file=OUTPUT_FILE):
 	# Load originals via Camera
 	source = Camera(source_file, W, H)
 	target = Camera(target_file, W, H)
 
-	# initial save
-	# VGA(source, output_file, W, H)
-	# VGA(source, "source_reconstructed.png", W, H)
-	# VGA(target, "target_reconstructed.png", W, H)
+	# create SRAM wrappers
+	global SRAM_S, SRAM_T
+	SRAM_S = SRAM(source, W, H)
+	SRAM_T = SRAM(target, W, H)
 
 	# save loss to the 4th byte
-	init_loss(source, target)
+	init_loss()
 
-	losses = []
 	for epoch in range(N):
 		sum_loss = 0
 		for _ in range(M):
-			# i = rand_cdf_6(W)
-			# j = rand_cdf_14(H)
-			i = random.randint(0, W - 1)
-			j = random.randint(0, H - 1)
+			i = RNG.randint(0, W - 1)
+			j = RNG.randint(0, H - 1)
 			
-			di, dj, loss = random_swap(source, target, i, j)
+			di, dj, loss = random_swap(i, j)
 			
-			if 0 <= i + di < W and 0 <= j + dj < H: 
+			if 0 <= i + di < W and 0 <= j + dj < H:
 				sum_loss += loss
 
-		VGA(source, output_file, W, H)
+		VGA(output_file, W, H)
 
-		if sum_loss == 0:
-			break
-		losses.append(abs(sum_loss) // M)
 		print(f"Epoch {epoch}: loss = {sum_loss / M}")
+		
+		if sum_loss == 0: break
 
 if __name__ == '__main__':
 	run_obamify()
