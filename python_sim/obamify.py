@@ -9,10 +9,9 @@ M = 10000
 W = 256
 H = 256
 MAX_LENGTH = 10
-TARGET_LOSS_DISCOUNT = 0.8
 
 INPUT_SOURCE = './input/vangogh.png'
-INPUT_TARGETS = ['./input/fk.png']
+INPUT_TARGETS = ['./input/t2.png']
 OUTPUT_FILE = './output/obamified.png'
 
 img_source = Image.open(INPUT_SOURCE).resize((W, H)).convert('RGB')
@@ -37,10 +36,11 @@ def loss_pixel(s, t, i, j, k, l):
     rgb_s = s[i, j]
     rgb_t = t[k, l]
     pixel_diff = rgb_s - rgb_t
-    return pixel_diff[0]**2 + pixel_diff[1]**2 + pixel_diff[2]**2 
+    return int(min(127, pixel_diff[0]**2 + pixel_diff[1]**2 + pixel_diff[2]**2))
 
 def random_swap(s, t, i, j):
     global W, H, MAX_LENGTH
+    global loss_hist
     movements = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
     l_i = random.randint(1, MAX_LENGTH)
@@ -50,9 +50,9 @@ def random_swap(s, t, i, j):
     k = i + di * l_i
     l = j + dj * l_j
     if k < 0 or k >= W or l < 0 or l >= H: return 0, 0, 0
-    loss_old = loss_pixel(s, t, i, j, i, j) + loss_pixel(s, t, k, l, k, l) * TARGET_LOSS_DISCOUNT
-    loss_new = loss_pixel(s, t, i, j, k, l) + loss_pixel(s, t, k, l, i, j) * TARGET_LOSS_DISCOUNT
-    
+    loss_old = loss_pixel(s, t, i, j, i, j) + loss_pixel(s, t, k, l, k, l)
+    loss_new = loss_pixel(s, t, i, j, k, l) + loss_pixel(s, t, k, l, i, j)
+
     loss_diff = loss_new - loss_old
     if loss_diff <= 0: return di * l_i, dj * l_j, loss_diff
     return 0, 0, 0
@@ -94,8 +94,5 @@ for epoch in range(N):
     obamified_image.save(OUTPUT_FILE)
 
     if sum_loss == 0: break
-    losses.append(sum_loss / M)
+    losses.append(abs(sum_loss) / M)
     print(f"Epoch {epoch}: loss = {sum_loss / M}")
-    plt.clf()
-    plt.plot(losses)
-    plt.savefig("output/loss.png")
