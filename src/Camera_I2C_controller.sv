@@ -1,4 +1,4 @@
-module I2C_Controller (
+module Camera_I2C_controller (
 	input  logic         CLOCK,
 	output wire          I2C_SCLK, // I2C CLOCK (driven by assign)
 	inout  wire          I2C_SDAT, // I2C DATA (tri-state driven by assign)

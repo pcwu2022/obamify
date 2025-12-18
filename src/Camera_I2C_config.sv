@@ -1,5 +1,5 @@
 `include "VGA_Param.h"
-module I2C_CCD_Config (
+module Camera_I2C_config (
     input  logic       iCLK,
     input  logic       iRST_N,
     input  logic       iZOOM_MODE_SW,
