@@ -1,4 +1,4 @@
-`include "VGA_Param.h"
+`include "VGA_Param.vh"
 module Camera_raw2RGB (
     input  logic 		iCLK,iRST_n;
     input  logic [11:0]	iData;

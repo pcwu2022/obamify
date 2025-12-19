@@ -1,4 +1,4 @@
-`include "VGA_Param.h"
+`include "VGA_Param.vh"
 module Camera_I2C_config (
     input  logic       iCLK,
     input  logic       iRST_N,

@@ -1,4 +1,4 @@
-`include "VGA_Param.h"
+`include "VGA_Param.vh"
 module Camera_capture(
     input  logic [11:0]	iDATA;
     input  logic 		iFVAL;
