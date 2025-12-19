@@ -1,15 +1,16 @@
 from PIL import Image
 import matplotlib.pyplot as plt
+import time
 
 # Configuration and constants
 N = 1024
-M = 16384
-W = 256
-H = 256
-MAX_LENGTH = 10
+M = 10240
+W = 128
+H = 128
+MAX_LENGTH = 20
 
-INPUT_SOURCE = './input/t2.png'
-INPUT_TARGETS = ['./input/fk.png']
+INPUT_SOURCE = './input/grayscale.png'
+INPUT_TARGETS = ['./input/vangogh.png']
 OUTPUT_FILE = './output/obamified_int.png'
 
 # Mean is fixed to 127; std is chosen as 64 (easy bit-shift friendly)
@@ -110,11 +111,15 @@ def VGA(output_file=OUTPUT_FILE, width=W, height=H):
 	# Accepts nested uint8 original-style pixels and saves image to disk
 	data = []
 	loss_image = []
+	global_loss = 0
 	for y in range(height):
 		for x in range(width):
 			r, g, b, l = nested[x][y]
 			data.append((clamp_uint8(r), clamp_uint8(g), clamp_uint8(b)))
 			loss_image.append((l, l, l))
+			global_loss += l
+	
+	print(f"Global loss: {global_loss // (width * height)}")
 
 	img = Image.new('RGB', (width, height))
 	img.putdata(data)
@@ -187,9 +192,12 @@ def run_obamify(source_file=INPUT_SOURCE, target_file=INPUT_TARGETS[0], output_f
 
 	# save loss to the 4th byte
 	init_loss()
-
+	VGA(output_file, W, H)
+	# return
+	
 	for epoch in range(N):
 		sum_loss = 0
+		loop_start = time.perf_counter()
 		for _ in range(M):
 			i = RNG.randint(0, W - 1)
 			j = RNG.randint(0, H - 1)
@@ -198,11 +206,14 @@ def run_obamify(source_file=INPUT_SOURCE, target_file=INPUT_TARGETS[0], output_f
 			
 			if 0 <= i + di < W and 0 <= j + dj < H:
 				sum_loss += loss
+		loop_end = time.perf_counter()
+		loop_time_us = (loop_end - loop_start) * 1_000_000
 
 		VGA(output_file, W, H)
 
-		print(f"Epoch {epoch}: loss = {sum_loss / M}")
+		print(f"Epoch {epoch}: loss = {sum_loss / M}, loop time = {loop_time_us:.2f} µs")
 		
+		# time.sleep(max(0, 0.05 - loop_time_us / 1_000_000))
 		if sum_loss == 0: break
 
 if __name__ == '__main__':
