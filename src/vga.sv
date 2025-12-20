@@ -1,54 +1,57 @@
 module	VGA	(	//	Host Side
-	iRed,
-	iGreen,
-	iBlue,
-	oCurrent_X,
-	oCurrent_Y,
-	oAddress,
-	oRequest,
+	input iRed,
+	input iGreen,
+	input iBlue,
+	output oAddress,
+	output oRequest,
 	//	VGA Side
-	oVGA_R,
-	oVGA_G,
-	oVGA_B,
-	oVGA_HS,
-	oVGA_VS,
-	oVGA_SYNC,
-	oVGA_BLANK,
-	oVGA_CLOCK,
+	output oVGA_R,
+	output oVGA_G,
+	output oVGA_B,
+	output oVGA_HS,
+	output oVGA_VS,
+	output oVGA_SYNC,
+	output oVGA_BLANK,
+	output oVGA_CLOCK,
 	//	Control Signal
-	iCLK,
-	iRST_N	
+	input	 iCLK,
+	input	 iRST_N	
 );
 
 //	Host Side
-input		[9:0]	iRed;
-input		[9:0]	iGreen;
-input		[9:0]	iBlue;
-output		[21:0]	oAddress;
+logic		[9:0]	iRed;
+logic		[9:0]	iGreen;
+logic		[9:0]	iBlue;
+logic		[21:0]	oAddress;
 // Host Side
-input  logic  [9:0]  iRed;
-input  logic  [9:0]  iGreen;
-input  logic  [9:0]  iBlue;
-output logic  [21:0] oAddress;
-output logic  [10:0] oCurrent_X;
-output logic  [10:0] oCurrent_Y;
+logic  [9:0]  iRed;
+logic  [9:0]  iGreen;
+logic  [9:0]  iBlue;
+logic  [21:0] oAddress;
+logic  [10:0] oCurrent_X;
+logic  [10:0] oCurrent_Y;
 output logic         oRequest;
 // VGA Side
-output logic  [9:0]  oVGA_R;
-output logic  [9:0]  oVGA_G;
-output logic  [9:0]  oVGA_B;
-output logic         oVGA_HS;
-output logic         oVGA_VS;
-output logic         oVGA_SYNC;
-output logic         oVGA_BLANK;
-output logic         oVGA_CLOCK;
+logic  [9:0]  oVGA_R;
+logic  [9:0]  oVGA_G;
+logic  [9:0]  oVGA_B;
+logic         oVGA_HS;
+logic         oVGA_VS;
+logic         oVGA_SYNC;
+logic         oVGA_BLANK;
+logic         oVGA_CLOCK;
 // Control Signal
-input  logic         iCLK;
-input  logic         iRST_N;    
+logic         iCLK;
+logic         iRST_N;    
 // Internal Registers
 logic  [10:0] H_Cont;
 logic  [10:0] V_Cont;
 
+////////////////////////////////////////////////////////////
+//	Horizontal Parameter
+parameter	H_FRONT	=	16;
+parameter	H_SYNC	=	96;
+parameter	H_BACK	=	48;
 parameter	H_ACT	=	640;
 parameter	H_BLANK	=	H_FRONT+H_SYNC+H_BACK;
 parameter	H_TOTAL	=	H_FRONT+H_SYNC+H_BACK+H_ACT;
@@ -64,9 +67,9 @@ parameter	V_TOTAL	=	V_FRONT+V_SYNC+V_BACK+V_ACT;
 assign	oVGA_SYNC	=	1'b1;			//	This pin is unused.
 assign	oVGA_BLANK	=	~((H_Cont<H_BLANK)||(V_Cont<V_BLANK));
 assign	oVGA_CLOCK	=	~iCLK;
-assign	oVGA_R		=	iRed;
-assign	oVGA_G		=	iGreen;
-assign	oVGA_B		=	iBlue;
+assign	oVGA_R		=	10'b0000010100 //iRed;
+assign	oVGA_G		=	10'b0000010100//iGreen;
+assign	oVGA_B		=	10'b0000010100//iBlue;
 assign	oAddress	=	oCurrent_Y*H_ACT+oCurrent_X;
 assign	oRequest	=	((H_Cont>=H_BLANK && H_Cont<H_TOTAL)	&&
 						 (V_Cont>=V_BLANK && V_Cont<V_TOTAL));

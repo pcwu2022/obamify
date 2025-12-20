@@ -136,12 +136,15 @@ module DE2_115 (
 	inout [6:0] EX_IO
 );
 
-// Debounce deb0(
-// 	.i_in(KEY[0]),
-// 	.i_rst_n(KEY[1]),
-// 	.i_clk(CLOCK_50),
-// 	.o_neg(keydown)
-// );
+
+wire keydown;
+
+Debounce deb0(
+	.i_in(KEY[0]),
+	.i_rst_n(KEY[1]),
+	.i_clk(CLOCK_50),
+	.o_neg(keydown)
+);
 
 // SevenHexDecoder seven_dec0(
 // 	.i_hex(random_value),
@@ -282,7 +285,7 @@ VGA	vga_0	(	//	Host Side
           .oVGA_CLOCK(VGA_CLK),
           //	Control Signal
           .iCLK(TD_CLK27),
-          .iRST_N(DLY2)	);
+          .iRST_N(KEY[1])	);
 
 assign HEX0 = '1;
 assign HEX1 = '1;
