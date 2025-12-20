@@ -31,8 +31,6 @@ parameter COLUMN_WIDTH = 256;
 // line buffer
 logic [7:0] buf_r[0:COLUMN_WIDTH-1], buf_w[0:COLUMN_WIDTH-1];
 
-integer i;
-
 assign oRed   = r_data_r;
 assign oGreen = g_data_r[7:0];
 assign oBlue  = b_data_r;
@@ -41,7 +39,7 @@ assign o_y    = y_cnt_r;
 assign oDval  = dval_r;
 
 always_comb begin
-    for (i=0; i<COLUMN_WIDTH; i=i+1) begin
+    for (int i=0; i<COLUMN_WIDTH; i=i+1) begin
         buf_w[i] = buf_r[i];
     end
     if (iDval && (iY_Cnt[0] == 1'b0)) begin // odd line
@@ -78,9 +76,9 @@ always_comb begin
     end
 end
 
-always_ff @(posedge iCLK or negedge iRST_n) begin
-    if (!iRST_n) begin
-        for (i=0; i<COLUMN_WIDTH; i=i+1) begin
+always_ff @(posedge iCLK or negedge iRST) begin
+    if (!iRST) begin
+        for (int i=0; i<COLUMN_WIDTH; i=i+1) begin
             buf_r[i] <= 8'd0;
         end
         r_data_r <= 8'd0;
@@ -91,7 +89,7 @@ always_ff @(posedge iCLK or negedge iRST_n) begin
         dval_r <= 1'b0;
     end
     else begin
-        for (i=0; i<COLUMN_WIDTH; i=i+1) begin
+        for (int i=0; i<COLUMN_WIDTH; i=i+1) begin
             buf_r[i] <= buf_w[i];
         end
         r_data_r <= r_data_w;

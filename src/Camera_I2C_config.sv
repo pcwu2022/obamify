@@ -5,8 +5,8 @@ module Camera_I2C_config (
     input  logic       iZOOM_MODE_SW,
     input  logic       iEXPOSURE_ADJ,
     input  logic       iEXPOSURE_DEC_p,
-    output logic       I2C_SCLK,
-    inout  logic       I2C_SDAT
+	output wire        I2C_SCLK,
+	inout  wire        I2C_SDAT
 );
 
 logic [15:0] mI2C_CLK_DIV;
@@ -124,7 +124,7 @@ always_ff @(posedge iCLK or negedge i2c_reset) begin
 	end
 end
 ////////////////////////////////////////////////////////////////////
-I2C_Controller 	u0	(	.CLOCK(mI2C_CTRL_CLK),
+Camera_I2C_controller 	u0	(	.CLOCK(mI2C_CTRL_CLK),
 						.I2C_SCLK(I2C_SCLK),
 						.I2C_SDAT(I2C_SDAT),
 						.I2C_DATA(mI2C_DATA),
