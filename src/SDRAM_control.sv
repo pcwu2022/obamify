@@ -5,7 +5,7 @@ module Sdram_Control (
     input  logic                    RESET_N,      // System Reset
     input  logic                    CLK,
     // FIFO Write Side 1
-    input  logic [`WRSIZE-1:0]     WR1_DATA,     // Data Input
+    input  logic [`WRSIZE-1:0]      WR1_DATA,     // Data Input
     input  logic                    WR1,          // Write Request
     input  logic [`ASIZE-1:0]       WR1_ADDR,     // Write Start Address
     input  logic [`ASIZE-1:0]       WR1_MAX_ADDR, // Write Max Address
@@ -13,7 +13,7 @@ module Sdram_Control (
     input  logic                    WR1_LOAD,     // Write FIFO Clear
     input  logic                    WR1_CLK,      // Write FIFO Clock
     // FIFO Write Side 2
-    input  logic [`WRSIZE-1:0]     WR2_DATA,     // Data Input
+    input  logic [`WRSIZE-1:0]      WR2_DATA,     // Data Input
     input  logic                    WR2,          // Write Request
     input  logic [`ASIZE-1:0]       WR2_ADDR,     // Write Start Address
     input  logic [`ASIZE-1:0]       WR2_MAX_ADDR, // Write Max Address
@@ -21,7 +21,7 @@ module Sdram_Control (
     input  logic                    WR2_LOAD,     // Write FIFO Clear
     input  logic                    WR2_CLK,      // Write FIFO Clock
     // FIFO Read Side 1
-    output logic [`RDSIZE-1:0]     RD1_DATA,     // Data Output
+    output logic [`RDSIZE-1:0]      RD1_DATA,     // Data Output
     input  logic                    RD1,          // Read Request
     input  logic [`ASIZE-1:0]       RD1_ADDR,     // Read Start Address
     input  logic [`ASIZE-1:0]       RD1_MAX_ADDR, // Read Max Address
@@ -29,7 +29,7 @@ module Sdram_Control (
     input  logic                    RD1_LOAD,     // Read FIFO Clear
     input  logic                    RD1_CLK,      // Read FIFO Clock
     // FIFO Read Side 2
-    output logic [`RDSIZE-1:0]     RD2_DATA,     // Data Output
+    output logic [`RDSIZE-1:0]      RD2_DATA,     // Data Output
     input  logic                    RD2,          // Read Request
     input  logic [`ASIZE-1:0]       RD2_ADDR,     // Read Start Address
     input  logic [`ASIZE-1:0]       RD2_MAX_ADDR, // Read Max Address

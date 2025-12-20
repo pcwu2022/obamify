@@ -149,10 +149,121 @@ module DE2_115 (
 // 	.o_seven_one(HEX0)
 // );
 
+logic [7:0] camera_Red, camera_Green, camera_Blue;
+logic raw2RGB_valid;
+logic [15:0] Camera_raw_data;
+logic [9:0] raw_X, raw_Y;
+logic [9:0] pixel_X, pixel_Y;
+logic [31:0] Frame_cnt;
+logic [23:0] SDRAM_to_SRAM_data;
+logic SDRAM_to_SRAM_valid;
+logic [23:0] SRAM_to_SDRAM_data;
+logic SRAM_to_SDRAM_valid;
+logic [9:0] iter_cnt;
+logic [23:0] SDRAM_to_VGA_data;
+logic VGA_Read;
+logic Capture;
+logic rst;
+logic Camera_CLK;
+logic Camera_SDAT;
+logic DSP_start;
+logic Camera_valid;
+
 assign VGA_R = vga_r10[9:2];
 assign VGA_G = vga_g10[9:2];
 assign VGA_B = vga_b10[9:2];
 
+// SDRAM Controller
+SDRAM_control	sdram_ctrl_0	(	
+	.RESET_N(KEY[1]),
+	.CLK(CLOCK_50),
+	// FIFO Write Side 1: from Camera raw2RGB
+	.WR1_DATA({camera_Red, camera_Green, camera_Blue}), // Data Input
+	.WR1(raw2RGB_valid),          						// Write Request
+	.WR1_ADDR(23'd0),     								// Write Start Address
+	.WR1_MAX_ADDR(23'd12288), 							// Write Max Address (128x128x3/4 = 12288)
+	.WR1_LENGTH(8'd64),									// Write Burst Length
+	.WR1_LOAD(!rst),     								// Write FIFO Clear
+	.WR1_CLK(Camera_CLK),      							// Write FIFO Clock
+	// FIFO Write Side 2: from Memory Transfer
+	.WR2_DATA(SRAM_to_SDRAM_data),          			// Data Input
+	.WR2(SRAM_to_SDRAM_valid),          				// Write Request
+	.WR2_ADDR(23'd12288*(iter_cnt+1)),     				// Write Start Address
+	.WR2_MAX_ADDR(23'd12288*(iter_cnt+2)), 				// Write Max Address
+	.WR2_LENGTH(8'd64),									// Write Burst Length
+	.WR2_LOAD(!rst),     								// Write FIFO Clear
+	.WR2_CLK(CLK),      								// Write FIFO Clock
+	// FIFO Read Side 1: from VGA
+	.RD1_DATA(SDRAM_to_VGA_data),     					// Data Output
+	.RD1(VGA_Read),          							// Read Request
+	.RD1_ADDR(23'd12288*iter_cnt),     					// Read Start Address
+	.RD1_MAX_ADDR(23'd12288*(iter_cnt+1)), 				// Read Max Address
+	.RD1_LENGTH(8'd64),									// Read Burst Length
+	.RD1_LOAD(!rst),     								// Read FIFO Clear
+	.RD1_CLK(VGA_CLK),      							// Read FIFO Clock
+	// FIFO Read Side 2: from Memory Transfer
+	.RD2_DATA(SDRAM_to_SRAM_data),     					// Data Output
+	.RD2(SRAM_Read),          							// Read Request
+	.RD2_ADDR(23'd0),     								// Read Start Address
+	.RD2_MAX_ADDR(23'd12288), 							// Read Max Address
+	.RD2_LENGTH(8'd64),									// Read Burst Length
+	.RD2_LOAD(!rst || DSP_start),     					// Read FIFO Clear
+	.RD2_CLK(CLK),      								// Read FIFO Clock
+	// SDRAM Side
+	.DRAM_ADDR(DRAM_ADDR),
+	.DRAM_BA(DRAM_BA),
+	.DRAM_CAS_N(DRAM_CAS_N),
+	.DRAM_CKE(DRAM_CKE),
+	.DRAM_CLK(DRAM_CLK),
+	.DRAM_CS_N(DRAM_CS_N),
+	.DRAM_DQ(DRAM_DQ),
+	.DRAM_DQM(DRAM_DQM),
+	.DRAM_RAS_N(DRAM_RAS_N),
+	.DRAM_WE_N(DRAM_WE_N)
+);
+
+// Camera Modules
+Camera_I2C_config  camera_i2c_0 (
+	.iCLK(CLOCK_50),
+	.iRST_N(rst),
+	.iZOOM_MODE_SW(1'b0),
+	.iEXPOSURE_ADJ(1'b0),
+	.iEXPOSURE_DEC_p(1'b0),
+	// I2C Side
+	.I2C_SCLK(Camera_SCLK),
+	.I2C_SDAT(Camera_SDAT)
+);
+
+Camera_capture  camera_capture_0 (
+	.iFVAL(Camera_FVAL),
+	.iLVAL(Camera_LVAL),
+	.iSTART(Capture),
+	.iEND(1'b0),
+	.iCLK(Camera_CLK),
+	.iRST(rst),
+	.oDATA(Camera_raw_data),
+	.oX_Cnt(raw_X),
+	.oY_Cnt(raw_Y),
+	.oFrame_Cnt(Frame_cnt),
+	.oDVAL(Camera_valid)
+);
+
+Camera_raw2RGB  camera_raw2RGB_0 (
+	.iCLK(Camera_CLK),
+	.iRST(rst),
+	.iData(Camera_raw_data),
+	.iDval(Camera_valid),
+	.iX_Cnt(raw_X),
+	.iY_Cnt(raw_Y),
+	.oRed(camera_Red),
+	.oGreen(camera_Green),
+	.oBlue(camera_Blue),
+	.o_x(pixel_X),
+	.o_y(pixel_Y),
+	.oDval(raw2RGB_valid)
+);
+
+// VGA Module
 VGA	vga_0	(	//	Host Side
           .iRed(mRed),
           .iGreen(mGreen),

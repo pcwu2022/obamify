@@ -1,16 +1,17 @@
 `include "VGA_Param.vh"
 module Camera_raw2RGB (
-    input  logic 		iCLK,iRST_n;
-    input  logic [11:0]	iData;
-    input  logic 		iDval;
-    input  logic [15:0]	iX_Cnt;
-    input  logic [15:0]	iY_Cnt;
-    output logic [7:0]	oRed;
-    output logic [7:0]	oGreen;
-    output logic [7:0]	oBlue;
-    output logic [15:0] o_x;
-    output logic [15:0] o_y;
-    output logic 		oDval;
+    input  logic 		iCLK,
+    input  logic 		iRST,
+    input  logic [11:0]	iData,
+    input  logic 		iDval,
+    input  logic [15:0]	iX_Cnt,
+    input  logic [15:0]	iY_Cnt,
+    output logic [7:0]	oRed,
+    output logic [7:0]	oGreen,
+    output logic [7:0]	oBlue,
+    output logic [15:0] o_x,
+    output logic [15:0] o_y,
+    output logic 		oDval
 );
 
 logic [7:0]  r_data_r, r_data_w;
@@ -20,11 +21,12 @@ logic [15:0] x_cnt_r, x_cnt_w;
 logic [15:0] y_cnt_r, y_cnt_w;
 logic        dval_r, dval_w;
 
-`ifdef VGA_640x480p60
-parameter COLUMN_WIDTH = 1280;
-`else
-parameter COLUMN_WIDTH = 800;
-`endif
+// `ifdef VGA_640x480p60
+// parameter COLUMN_WIDTH = 1280;
+// `else
+// parameter COLUMN_WIDTH = 800;
+// `endif
+parameter COLUMN_WIDTH = 256;
 
 // line buffer
 logic [7:0] buf_r[0:COLUMN_WIDTH-1], buf_w[0:COLUMN_WIDTH-1];
