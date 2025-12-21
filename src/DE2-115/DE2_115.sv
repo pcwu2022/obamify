@@ -161,6 +161,16 @@ Debounce deb0(
 	.o_neg(keydown)
 );
 
+// pll
+sdram_pll pll_0(
+	.inclk0(CLOCK_50),
+	.c0(sdram_ctrl_clk),
+	.c1(DRAM_CLK),
+	.c2(Camera_XCLKIN), //25M
+	.c3(VGA_CLK)     	//25M 
+	.c4()     			//40M
+);
+
 // SevenHexDecoder seven_dec0(
 // 	.i_hex(random_value),
 // 	.o_seven_ten(HEX1),
@@ -189,8 +199,9 @@ logic Camera_CLK;
 logic Camera_SCLK;
 logic Camera_XCLKIN;
 logic Camera_SDAT;
-logic DSP_start;
+logic DSP_start, DSP_start_d;
 logic Camera_valid;
+logic sdram_ctrl_clk;
 
 assign VGA_R = vga_r10[9:2];
 assign VGA_G = vga_g10[9:2];
@@ -199,7 +210,7 @@ assign VGA_B = vga_b10[9:2];
 // SDRAM Controller
 SDRAM_control	sdram_ctrl_0	(	
 	.RESET_N(KEY[1]),
-	.CLK(CLOCK_50),
+	.CLK(sdram_ctrl_clk),
 	// FIFO Write Side 1: from Camera raw2RGB
 	.WR1_DATA({camera_Red, camera_Green, camera_Blue}), // Data Input
 	.WR1(raw2RGB_valid),          						// Write Request
@@ -215,7 +226,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.WR2_MAX_ADDR(23'd12288*(iter_cnt+2)), 				// Write Max Address
 	.WR2_LENGTH(8'd64),									// Write Burst Length
 	.WR2_LOAD(KEY[1]),     								// Write FIFO Clear
-	.WR2_CLK(CLK),      								// Write FIFO Clock
+	.WR2_CLK(CLOCK_50),      								// Write FIFO Clock
 	// FIFO Read Side 1: from VGA
 	.RD1_DATA(SDRAM_to_VGA_data),     					// Data Output
 	.RD1(VGA_Read),          							// Read Request
@@ -230,8 +241,8 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_ADDR(23'd0),     								// Read Start Address
 	.RD2_MAX_ADDR(23'd12288), 							// Read Max Address
 	.RD2_LENGTH(8'd64),									// Read Burst Length
-	.RD2_LOAD(KEY[1] || DSP_start),     					// Read FIFO Clear
-	.RD2_CLK(CLK),      								// Read FIFO Clock
+	.RD2_LOAD(KEY[1] || DSP_start),     				// Read FIFO Clear
+	.RD2_CLK(CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
 	.DRAM_ADDR(DRAM_ADDR),
 	.DRAM_BA(DRAM_BA),
@@ -308,6 +319,20 @@ VGA	vga_0	(	//	Host Side
           .iCLK(TD_CLK27),
           .iRST_N(KEY[1])
 );
+
+// tmp, for testing
+always_ff @(posedge CLOCK_50 or negedge KEY[1]) begin
+	if (!KEY[1]) begin
+		iter_cnt <= 10'd0;
+		DSP_start_d <= 1'b0;
+		DSP_start <= 1'b0;
+	end
+	else begin
+		iter_cnt <= 10'd0;
+		DSP_start_d <= DSP_start;
+		DSP_start <= keydown;
+	end
+end
 
 assign HEX0 = '1;
 assign HEX1 = '1;
