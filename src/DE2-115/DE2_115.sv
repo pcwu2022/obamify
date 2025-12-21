@@ -123,34 +123,17 @@ module DE2_115 (
 	input FL_RY,
 	output FL_WE_N,
 	output FL_WP_N,
-	inout [35:0] GPIO,
-	input HSMC_CLKIN_P1,
-	input HSMC_CLKIN_P2,
-	input HSMC_CLKIN0,
-	output HSMC_CLKOUT_P1,
-	output HSMC_CLKOUT_P2,
-	output HSMC_CLKOUT0,
-	inout [3:0] HSMC_D,
-	input [16:0] HSMC_RX_D_P,
-	output [16:0] HSMC_TX_D_P,
-	inout [6:0] EX_IO
+	input [11:0] D5M_D;
+	input D5M_FVAL;
+	input D5M_LVAL;
+	input D5M_PIXLCLK;
+	output D5M_RESET_N;
+	output D5M_SCLK;
+	inout D5M_SDATA;
+	input D5M_STROBE;
+	output D5M_TRIGGER;
+	output D5M_XCLKIN;
 );
-
-// Camera to GPIO wrapper
-Camera_GPIO_wrapper camera_gpio_inst (
-	.GPIO(GPIO),
-	.pixclk(Camera_CLK),
-	.data(Camera_data),
-	.lval(Camera_LVAL),
-	.fval(Camera_FVAL),
-	.strobe(Camera_strobe),
-	.xclkin(Camera_XCLKIN),
-	.reset_n(KEY[1]),
-	.trigger(1'b1),
-	.sclk(Camera_SCLK),
-	.sdata(Camera_SDAT)
-);
-
 
 wire keydown;
 
@@ -166,7 +149,7 @@ sdram_pll pll_0(
 	.inclk0(CLOCK_50),
 	.c0(sdram_ctrl_clk),
 	.c1(DRAM_CLK),
-	.c2(Camera_XCLKIN), //25M
+	.c2(D5M_XCLKIN), //25M
 	.c3(VGA_CLK)     	//25M 
 	.c4()     			//40M
 );
@@ -177,9 +160,6 @@ sdram_pll pll_0(
 // 	.o_seven_one(HEX0)
 // );
 
-logic [11:0] Camera_data;
-logic Camera_FVAL;
-logic Camera_LVAL;
 logic [7:0] camera_Red, camera_Green, camera_Blue;
 logic raw2RGB_valid;
 logic [15:0] Camera_raw_data;
@@ -193,12 +173,6 @@ logic SRAM_to_SDRAM_valid;
 logic [9:0] iter_cnt;
 logic [23:0] SDRAM_to_VGA_data;
 logic VGA_Read;
-logic Capture;
-logic Camera_strobe;
-logic Camera_CLK;
-logic Camera_SCLK;
-logic Camera_XCLKIN;
-logic Camera_SDAT;
 logic DSP_start, DSP_start_d;
 logic Camera_valid;
 logic sdram_ctrl_clk;
@@ -206,6 +180,8 @@ logic sdram_ctrl_clk;
 assign VGA_R = vga_r10[9:2];
 assign VGA_G = vga_g10[9:2];
 assign VGA_B = vga_b10[9:2];
+assign D5M_TRIGGER = 1'b1;
+assign D5M_RESET_N = KEY[1];
 
 // SDRAM Controller
 SDRAM_control	sdram_ctrl_0	(	
@@ -218,7 +194,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.WR1_MAX_ADDR(23'd12288), 							// Write Max Address (128x128x3/4 = 12288)
 	.WR1_LENGTH(8'd64),									// Write Burst Length
 	.WR1_LOAD(KEY[1]),     								// Write FIFO Clear
-	.WR1_CLK(Camera_CLK),      							// Write FIFO Clock
+	.WR1_CLK(D5M_PIXLCLK),      							// Write FIFO Clock
 	// FIFO Write Side 2: from Memory Transfer
 	.WR2_DATA(SRAM_to_SDRAM_data),          			// Data Input
 	.WR2(SRAM_to_SDRAM_valid),          				// Write Request
@@ -264,17 +240,17 @@ Camera_I2C_config  camera_i2c_0 (
 	.iEXPOSURE_ADJ(1'b0),
 	.iEXPOSURE_DEC_p(1'b0),
 	// I2C Side
-	.I2C_SCLK(Camera_SCLK),
-	.I2C_SDAT(Camera_SDAT)
+	.I2C_SCLK(D5M_SCLK),
+	.I2C_SDAT(D5M_SDATA)
 );
 
 Camera_capture  camera_capture_0 (
-	.iDATA(Camera_data),
-	.iFVAL(Camera_FVAL),
-	.iLVAL(Camera_LVAL),
+	.iDATA(D5M_D),
+	.iFVAL(D5M_FVAL),
+	.iLVAL(D5M_LVAL),
 	.iSTART(KEY[1] | keydown),
 	.iEND(1'b0),
-	.iCLK(Camera_CLK),
+	.iCLK(D5M_PIXLCLK),
 	.iRST(KEY[1]),
 	.oDATA(Camera_raw_data),
 	.oX_Cnt(raw_X),
@@ -284,7 +260,7 @@ Camera_capture  camera_capture_0 (
 );
 
 Camera_raw2RGB  camera_raw2RGB_0 (
-	.iCLK(Camera_CLK),
+	.iCLK(D5M_PIXLCLK),
 	.iRST(KEY[1]),
 	.iData(Camera_raw_data),
 	.iDval(Camera_valid),
