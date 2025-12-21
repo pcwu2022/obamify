@@ -1,98 +1,113 @@
-from PIL import Image
-from numpy import asarray
-import random
-import json
-import matplotlib.pyplot as plt
+import time
+import argparse
+from util import Camera, SRAM, PRNG, VGA, loss_pixel, init_loss, clamp_uint8
 
-N = 1000
-M = 10000
-W = 256
-H = 256
-MAX_LENGTH = 10
+# Configuration and constants
+N = 1024
+M = 1024
+W = 128
+H = 128
+MAX_LENGTH = 8
 
-INPUT_SOURCE = './input/vangogh.png'
-INPUT_TARGETS = ['./input/t2.png']
-OUTPUT_FILE = './output/obamified.png'
+TIME_BETWEEN_FRAMES_MS = 50  # 50 ms
 
-img_source = Image.open(INPUT_SOURCE).resize((W, H)).convert('RGB')
-img_target = Image.open(INPUT_TARGETS[0]).resize((W, H)).convert('RGB')
-source = asarray(img_source).copy()
-target = asarray(img_target).copy()
+parser = argparse.ArgumentParser(description='Obamify image transformation')
+parser.add_argument('--input_source', type=str, default='./input/bob.png', help='Path to source image')
+parser.add_argument('--input_target', type=str, default='./input/obama.png', help='Path to target image')
+parser.add_argument('--output_file', type=str, default='./output/obamified.png', help='Path to output image')
+args = parser.parse_args()
 
-# Compute mean and std for normalization
-source_mean = source.mean(axis=(0, 1))
-source_std = source.std(axis=(0, 1))
-target_mean = target.mean(axis=(0, 1))
-target_std = target.std(axis=(0, 1))
+INPUT_SOURCE = args.input_source
+INPUT_TARGET = args.input_target
+OUTPUT_FILE = args.output_file
 
-# Normalize source and target
-source = (source - source_mean) / (source_std + 1e-8)
-target = (target - target_mean) / (target_std + 1e-8)
+MOVEMENTS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
-def reconstruct(normalized_array, mean, std):
-    return (normalized_array * std + mean).astype('uint8')
+# global deterministic RNG instance
+RNG = PRNG(1)
 
-def loss_pixel(s, t, i, j, k, l):
-    rgb_s = s[i, j]
-    rgb_t = t[k, l]
-    pixel_diff = rgb_s - rgb_t
-    return int(min(127, pixel_diff[0]**2 + pixel_diff[1]**2 + pixel_diff[2]**2))
+""" Obamify Algorithm """
 
-def random_swap(s, t, i, j):
-    global W, H, MAX_LENGTH
-    global loss_hist
-    movements = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+def obamify():
+	
+	# === Cycle 0 - CALC_INIT: generate random movement === #
+	random_21_bits = RNG.randint(0, 2**21 - 1)
+	deviation = random_21_bits % MAX_LENGTH	# select the 0-4 bits for deviation
+	direction = (random_21_bits >> 5) % 4	# select the 5-6 bits for direction
+	i = (random_21_bits >> 7) % W			# select the 7-13 bits for i
+	j = (random_21_bits >> 14) % H			# select the 14-20 bits for j
+	di, dj = MOVEMENTS[direction]
+	k = i + (deviation if di != 0 else 0)
+	l = j + (deviation if dj != 0 else 0)
+	if k < 0 or k >= W or l < 0 or l >= H: return False, 0
+	
+	# === Cycle 1 - READ_SOURCE_1: read source pixel 1 === #
+	pixel_s_1 = SRAM_S.getItem(i, j)
+	# === Cycle 2 - READ_SOURCE_2: read source pixel 2 === #
+	pixel_s_2 = SRAM_S.getItem(k, l)
+	# === Cycle 3 - READ_TARGET_1: read target pixel 1 === #
+	pixel_t_1 = SRAM_T.getItem(i, j)
+	# === Cycle 4 - READ_TARGET_2: read target pixel 2 === #
+	pixel_t_2 = SRAM_T.getItem(k, l)
+	
+	# === Cycle 5 - CALC_LOSS: calculate swap loss === #
+	loss_old = int(pixel_s_1[3]) + int(pixel_s_2[3])
+	loss_move_forward = loss_pixel(pixel_s_1, pixel_t_2)
+	loss_move_reverse = loss_pixel(pixel_s_2, pixel_t_1)
+	loss_new = loss_move_forward + loss_move_reverse
+	
+	if loss_new > loss_old: return True, loss_old
+	
+	# perform swap and update loss bytes
+	pixel_s_1[3] = clamp_uint8(loss_move_reverse)
+	pixel_s_2[3] = clamp_uint8(loss_move_forward)
+	
+	# swap RGB channels
+	pixel_s_1[0], pixel_s_2[0] = pixel_s_2[0], pixel_s_1[0]
+	pixel_s_1[1], pixel_s_2[1] = pixel_s_2[1], pixel_s_1[1]
+	pixel_s_1[2], pixel_s_2[2] = pixel_s_2[2], pixel_s_1[2]
+	
+	# write back
+	# === Cycle 6 - WRITE_SOURCE_1: write source pixel 1 === #
+	SRAM_S.setItem(i, j, pixel_s_1)
+	# === Cycle 7 - WRITE_SOURCE_2: write source pixel 2 === #
+	SRAM_S.setItem(k, l, pixel_s_2)
 
-    l_i = random.randint(1, MAX_LENGTH)
-    l_j = random.randint(1, MAX_LENGTH)
-    di, dj = movements[random.randint(0, 3)]
+	return True, clamp_uint8(loss_new)
 
-    k = i + di * l_i
-    l = j + dj * l_j
-    if k < 0 or k >= W or l < 0 or l >= H: return 0, 0, 0
-    loss_old = loss_pixel(s, t, i, j, i, j) + loss_pixel(s, t, k, l, k, l)
-    loss_new = loss_pixel(s, t, i, j, k, l) + loss_pixel(s, t, k, l, i, j)
+def main(source_file=INPUT_SOURCE, target_file=INPUT_TARGET, output_file=OUTPUT_FILE):
+	# Load originals via Camera
+	source = Camera(source_file, W, H)
+	target = Camera(target_file, W, H)
 
-    loss_diff = loss_new - loss_old
-    if loss_diff <= 0: return di * l_i, dj * l_j, loss_diff
-    return 0, 0, 0
+	# create SRAM wrappers
+	global SRAM_S, SRAM_T
+	SRAM_S = SRAM(source, W, H)
+	SRAM_T = SRAM(target, W, H)
 
-# generate a random number in [0, max_i) using a piecewise linear CDF
-def rand_cdf_6(max_i):
-    i = random.randint(0, 6*max_i - 1)
-    if i < max_i: return i // 4
-    if i < 5*max_i: return i // 8 + max_i // 8
-    return i // 4 - max_i // 2
+	# save loss to the 4th byte
+	init_loss(SRAM_S, SRAM_T, W, H)
+	VGA(SRAM_S, output_file, W, H)
+	time.sleep(1)
+	
+	for epoch in range(N):
+		sum_loss = 0
+		loop_start = time.perf_counter()
 
-def rand_cdf_14(max_i):
-    i = random.randint(0, 14*max_i - 1)
-    if i < max_i: return i // 8
-    if i < 13*max_i: return i // 16 + max_i // 16
-    return i // 8 - max_i * 3 // 4
+		for iteration in range(M):
+			valid, loss = obamify()
+			if valid: sum_loss += loss
+		
+		loop_end = time.perf_counter()
+		loop_time_ms = (loop_end - loop_start) * 1_000
 
-# Replace saving normalized float array (which causes KeyError) with a denormalized uint8 image
-obamified_image = Image.fromarray(reconstruct(source, source_mean, source_std))
-obamified_image.save(OUTPUT_FILE)
-losses = []
-for epoch in range(N):
-    sum_loss = 0
-    for m in range(M):
-        i = rand_cdf_6(W)
-        j = rand_cdf_14(H)
-        # i = random.randint(0, W - 1)
-        # j = random.randint(0, W - 1)
-        di, dj, loss = random_swap(source, target, i, j)
-        k = i + di
-        l = j + dj
-        sum_loss += loss
-        temp_val_ij = source[i, j].copy() 
-        temp_val_kl = source[k, l].copy()
-        source[i, j] = temp_val_kl
-        source[k, l] = temp_val_ij
-            
-    obamified_image = Image.fromarray(reconstruct(source, source_mean, source_std))
-    obamified_image.save(OUTPUT_FILE)
+		VGA(SRAM_S, output_file, W, H)
 
-    if sum_loss == 0: break
-    losses.append(abs(sum_loss) / M)
-    print(f"Epoch {epoch}: loss = {sum_loss / M}")
+		print(f"Epoch {epoch}: loss = {sum_loss / M}, loop time = {loop_time_ms:.2f} ms")
+		
+		time.sleep(max(0, TIME_BETWEEN_FRAMES_MS - loop_time_ms) / 1000.0)
+		
+		if sum_loss == 0: break
+
+if __name__ == '__main__':
+	main()
