@@ -154,9 +154,9 @@ assign o_sram_we = sram_we_r;
 
 // Extract random number fields
 assign deviation = random_number_r[2:0];                    // 3 bits for 0-7
-assign direction = random_number_r[4:3];                    // 2 bits for 0-3
-assign rand_i = random_number_r[11:5];                      // 7 bits for 0-127
-assign rand_j = random_number_r[18:12];                     // 7 bits for 0-127
+assign direction = random_number_r[6:5];                    // 2 bits for 0-3 (bits 3-4 skipped)
+assign rand_i = random_number_r[13:7];                      // 7 bits for 0-127
+assign rand_j = random_number_r[20:14];                     // 7 bits for 0-127
 
 // Calculate target indices based on direction
 // Direction 0: (0, +1), Direction 1: (+1, 0), Direction 2: (0, -1), Direction 3: (-1, 0)
