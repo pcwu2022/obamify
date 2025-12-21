@@ -175,6 +175,12 @@ logic [23:0] SDRAM_to_VGA_data;
 logic VGA_Read;
 logic DSP_start, DSP_start_d;
 logic Camera_valid;
+logic [9:0] vga_r10;
+logic [9:0] vga_g10;
+logic [9:0] vga_b10;
+logic [9:0] mRed;
+logic [9:0] mGreen;
+logic [9:0] mBlue;
 logic sdram_ctrl_clk;
 
 assign VGA_R = vga_r10[9:2];
@@ -279,8 +285,6 @@ VGA	vga_0	(	//	Host Side
           .iRed(mRed),
           .iGreen(mGreen),
           .iBlue(mBlue),
-          .oCurrent_X(VGA_X),
-          .oCurrent_Y(VGA_Y),
           .oRequest(VGA_Read),
           //	VGA Side
           .oVGA_R(vga_r10 ),
