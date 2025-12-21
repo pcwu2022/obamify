@@ -45,20 +45,29 @@ module sdram_pll (
 	output logic c3,
 	output logic c4);
 
-	logic [0:0] sub_wire2 = 1'h0;
+	logic [0:0] sub_wire2;
 	logic [4:0] sub_wire3;
-	logic  sub_wire0 = inclk0;
-	logic [1:0] sub_wire1 = {sub_wire2, sub_wire0};
-	logic [4:4] sub_wire8 = sub_wire3[4:4];
-	logic [3:3] sub_wire7 = sub_wire3[3:3];
-	logic [2:2] sub_wire6 = sub_wire3[2:2];
-	logic [1:1] sub_wire5 = sub_wire3[1:1];
-	logic [0:0] sub_wire4 = sub_wire3[0:0];
-	logic  c0 = sub_wire4;
-	logic  c1 = sub_wire5;
-	logic  c2 = sub_wire6;
-	logic  c3 = sub_wire7;
-	logic  c4 = sub_wire8;
+	logic  sub_wire0;
+	logic [1:0] sub_wire1;
+	logic [4:4] sub_wire8;
+	logic [3:3] sub_wire7;
+	logic [2:2] sub_wire6;
+	logic [1:1] sub_wire5;
+	logic [0:0] sub_wire4;
+
+	assign sub_wire2 = 1'h0;
+	assign sub_wire0 = inclk0;
+	assign sub_wire1 = {sub_wire2, sub_wire0};
+	assign sub_wire8 = sub_wire3[4:4];
+	assign sub_wire7 = sub_wire3[3:3];
+	assign sub_wire6 = sub_wire3[2:2];
+	assign sub_wire5 = sub_wire3[1:1];
+	assign sub_wire4 = sub_wire3[0:0];
+	assign  c0 = sub_wire4;
+	assign  c1 = sub_wire5;
+	assign  c2 = sub_wire6;
+	assign  c3 = sub_wire7;
+	assign  c4 = sub_wire8;
 
 	altpll	altpll_component (
 				.inclk (sub_wire1),

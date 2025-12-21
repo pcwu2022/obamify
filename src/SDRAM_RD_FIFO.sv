@@ -12,13 +12,13 @@ module SDRAM_RD_FIFO (
 	output logic [7:0]   wrusedw
 );
 
-`ifndef ALTERA_RESERVED_QIS
-// synopsys translate_off
-`endif
-	tri0	  aclr;
-`ifndef ALTERA_RESERVED_QIS
-// synopsys translate_on
-`endif
+// `ifndef ALTERA_RESERVED_QIS
+// // synopsys translate_off
+// `endif
+// 	tri0	  aclr;
+// `ifndef ALTERA_RESERVED_QIS
+// // synopsys translate_on
+// `endif
 
 	wire [7:0] sub_wire0;
 	wire [23:0] sub_wire1;
@@ -50,8 +50,8 @@ module SDRAM_RD_FIFO (
 		dcfifo_mixed_widths_component.lpm_type = "dcfifo",
 		dcfifo_mixed_widths_component.lpm_width = 32,
 		dcfifo_mixed_widths_component.lpm_widthu = 8,
-		dcfifo_mixed_widths_component.lpm_widthu_r = 8,
-		dcfifo_mixed_widths_component.lpm_width_r = 24,
+		dcfifo_mixed_widths_component.lpm_widthu_r = 9,
+		dcfifo_mixed_widths_component.lpm_width_r = 16,
 		dcfifo_mixed_widths_component.overflow_checking = "ON",
 		dcfifo_mixed_widths_component.rdsync_delaypipe = 4,
 		dcfifo_mixed_widths_component.underflow_checking = "ON",

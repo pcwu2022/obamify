@@ -1,3 +1,5 @@
+`include "SDRAM_Params.vh"
+
 module SDRAM_datapath (
         input  logic                CLK,     // System Clock
         input  logic                RESET_N, // System Reset
@@ -6,8 +8,6 @@ module SDRAM_datapath (
         output logic [`DSIZE-1:0]   DQOUT,
         output logic [`DSIZE/8-1:0] DQM      // SDRAM data mask outputs
 );
-
-`include "SDRAM_Params.vh"
 
 // Align the input and output data to the SDRAM control path
 always_ff @(posedge CLK or negedge RESET_N)

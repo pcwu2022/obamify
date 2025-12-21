@@ -26,15 +26,15 @@
 # Build by Terasic System Builder
 #============================================================
 
-set_global_assignment -name FAMILY "Cyclone IV E"
-set_global_assignment -name DEVICE EP4CE115F29C7
-set_global_assignment -name TOP_LEVEL_ENTITY DE2_115_CAMERA
-set_global_assignment -name ORIGINAL_QUARTUS_VERSION "9.1 SP2"
-set_global_assignment -name LAST_QUARTUS_VERSION 16.0.2
-set_global_assignment -name PROJECT_CREATION_TIME_DATE "17:53:46  AUGUST 10, 2010"
-set_global_assignment -name DEVICE_FILTER_PACKAGE FPGA
-set_global_assignment -name DEVICE_FILTER_PIN_COUNT 780
-set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 7
+# set_global_assignment -name FAMILY "Cyclone IV E"
+# set_global_assignment -name DEVICE EP4CE115F29C7
+# set_global_assignment -name TOP_LEVEL_ENTITY DE2_115_CAMERA
+# set_global_assignment -name ORIGINAL_QUARTUS_VERSION "9.1 SP2"
+# set_global_assignment -name LAST_QUARTUS_VERSION 16.0.2
+# set_global_assignment -name PROJECT_CREATION_TIME_DATE "17:53:46  AUGUST 10, 2010"
+# set_global_assignment -name DEVICE_FILTER_PACKAGE FPGA
+# set_global_assignment -name DEVICE_FILTER_PIN_COUNT 780
+# set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 7
 
 #============================================================
 # CLOCK
@@ -993,39 +993,39 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to D5M_SCLK
 #============================================================
 
 
-set_global_assignment -name ENABLE_SIGNALTAP OFF
-set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
-set_global_assignment -name TIMEQUEST_MULTICORNER_ANALYSIS ON
-set_global_assignment -name TIMEQUEST_DO_CCPP_REMOVAL ON
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_global_assignment -name LL_ROOT_REGION ON -section_id "Root Region"
-set_global_assignment -name LL_MEMBER_STATE LOCKED -section_id "Root Region"
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name VERILOG_FILE Sdram_Control/command.v
-set_global_assignment -name VERILOG_FILE Sdram_Control/control_interface.v
-set_global_assignment -name VERILOG_FILE Sdram_Control/sdr_data_path.v
-set_global_assignment -name VERILOG_FILE Sdram_Control/Sdram_Control.v
-set_global_assignment -name SOURCE_FILE Sdram_Control/Sdram_Params.h
-set_global_assignment -name VERILOG_FILE Sdram_Control/Sdram_RD_FIFO.v
-set_global_assignment -name VERILOG_FILE Sdram_Control/Sdram_WR_FIFO.v
-set_global_assignment -name VERILOG_FILE v/CCD_Capture.v
-set_global_assignment -name VERILOG_FILE v/I2C_CCD_Config.v
-set_global_assignment -name VERILOG_FILE v/I2C_Controller.v
-set_global_assignment -name VERILOG_FILE v/Line_Buffer.v
-set_global_assignment -name VERILOG_FILE v/RAW2RGB.v
-set_global_assignment -name VERILOG_FILE v/Reset_Delay.v
-set_global_assignment -name VERILOG_FILE v/SEG7_LUT.v
-set_global_assignment -name VERILOG_FILE v/SEG7_LUT_8.v
-set_global_assignment -name VERILOG_FILE v/Stack_RAM.v
-set_global_assignment -name VERILOG_FILE v/VGA_Controller.v
-set_global_assignment -name SDC_FILE DE2_115_D5M_VGA.SDC
-set_global_assignment -name QIP_FILE v/sdram_pll.qip
-set_global_assignment -name SIGNALTAP_FILE stp1.stp
-set_global_assignment -name VERILOG_FILE v/touch_tcon.v
-set_global_assignment -name VERILOG_FILE v/VGA_Param.v
-set_global_assignment -name SOURCE_FILE VGA_Param.h
-set_global_assignment -name VERILOG_FILE v/Line_Buffer1.v
-set_global_assignment -name QIP_FILE v/Line_Buffer1.qip
-set_global_assignment -name VERILOG_FILE DE2_115_CAMERA.v
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+# set_global_assignment -name ENABLE_SIGNALTAP OFF
+# set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
+# set_global_assignment -name TIMEQUEST_MULTICORNER_ANALYSIS ON
+# set_global_assignment -name TIMEQUEST_DO_CCPP_REMOVAL ON
+# set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+# set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+# set_global_assignment -name LL_ROOT_REGION ON -section_id "Root Region"
+# set_global_assignment -name LL_MEMBER_STATE LOCKED -section_id "Root Region"
+# set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+# set_global_assignment -name VERILOG_FILE Sdram_Control/command.v
+# set_global_assignment -name VERILOG_FILE Sdram_Control/control_interface.v
+# set_global_assignment -name VERILOG_FILE Sdram_Control/sdr_data_path.v
+# set_global_assignment -name VERILOG_FILE Sdram_Control/Sdram_Control.v
+# set_global_assignment -name SOURCE_FILE Sdram_Control/Sdram_Params.h
+# set_global_assignment -name VERILOG_FILE Sdram_Control/Sdram_RD_FIFO.v
+# set_global_assignment -name VERILOG_FILE Sdram_Control/Sdram_WR_FIFO.v
+# set_global_assignment -name VERILOG_FILE v/CCD_Capture.v
+# set_global_assignment -name VERILOG_FILE v/I2C_CCD_Config.v
+# set_global_assignment -name VERILOG_FILE v/I2C_Controller.v
+# set_global_assignment -name VERILOG_FILE v/Line_Buffer.v
+# set_global_assignment -name VERILOG_FILE v/RAW2RGB.v
+# set_global_assignment -name VERILOG_FILE v/Reset_Delay.v
+# set_global_assignment -name VERILOG_FILE v/SEG7_LUT.v
+# set_global_assignment -name VERILOG_FILE v/SEG7_LUT_8.v
+# set_global_assignment -name VERILOG_FILE v/Stack_RAM.v
+# set_global_assignment -name VERILOG_FILE v/VGA_Controller.v
+# set_global_assignment -name SDC_FILE DE2_115_D5M_VGA.SDC
+# set_global_assignment -name QIP_FILE v/sdram_pll.qip
+# set_global_assignment -name SIGNALTAP_FILE stp1.stp
+# set_global_assignment -name VERILOG_FILE v/touch_tcon.v
+# set_global_assignment -name VERILOG_FILE v/VGA_Param.v
+# set_global_assignment -name SOURCE_FILE VGA_Param.h
+# set_global_assignment -name VERILOG_FILE v/Line_Buffer1.v
+# set_global_assignment -name QIP_FILE v/Line_Buffer1.qip
+# set_global_assignment -name VERILOG_FILE DE2_115_CAMERA.v
+# set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -1,6 +1,6 @@
 `include "SDRAM_Params.vh"
 
-module Sdram_Control (
+module SDRAM_control (
     // HOST Side
     input  logic                    RESET_N,      // System Reset
     input  logic                    CLK,

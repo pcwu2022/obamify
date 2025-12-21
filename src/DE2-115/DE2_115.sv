@@ -123,16 +123,16 @@ module DE2_115 (
 	input FL_RY,
 	output FL_WE_N,
 	output FL_WP_N,
-	input [11:0] D5M_D;
-	input D5M_FVAL;
-	input D5M_LVAL;
-	input D5M_PIXLCLK;
-	output D5M_RESET_N;
-	output D5M_SCLK;
-	inout D5M_SDATA;
-	input D5M_STROBE;
-	output D5M_TRIGGER;
-	output D5M_XCLKIN;
+	input [11:0] D5M_D,
+	input D5M_FVAL,
+	input D5M_LVAL,
+	input D5M_PIXLCLK,
+	output D5M_RESET_N,
+	output D5M_SCLK,
+	inout D5M_SDATA,
+	input D5M_STROBE,
+	output D5M_TRIGGER,
+	output D5M_XCLKIN
 );
 
 wire keydown;
@@ -150,7 +150,7 @@ sdram_pll pll_0(
 	.c0(sdram_ctrl_clk),
 	.c1(DRAM_CLK),
 	.c2(D5M_XCLKIN), //25M
-	.c3(VGA_CLK)     	//25M 
+	.c3(VGA_CLK_in),     	//25M 
 	.c4()     			//40M
 );
 
@@ -226,16 +226,15 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_LOAD(KEY[1] || DSP_start),     				// Read FIFO Clear
 	.RD2_CLK(CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
-	.DRAM_ADDR(DRAM_ADDR),
-	.DRAM_BA(DRAM_BA),
-	.DRAM_CAS_N(DRAM_CAS_N),
-	.DRAM_CKE(DRAM_CKE),
-	.DRAM_CLK(DRAM_CLK),
-	.DRAM_CS_N(DRAM_CS_N),
-	.DRAM_DQ(DRAM_DQ),
-	.DRAM_DQM(DRAM_DQM),
-	.DRAM_RAS_N(DRAM_RAS_N),
-	.DRAM_WE_N(DRAM_WE_N)
+	.SA(DRAM_ADDR),
+	.BA(DRAM_BA),
+	.CS_N(DRAM_CS_N),
+	.CKE(DRAM_CKE),
+	.RAS_N(DRAM_RAS_N),
+	.CAS_N(DRAM_CAS_N),
+	.WE_N(DRAM_WE_N),
+	.DQ(DRAM_DQ),
+	.DQM(DRAM_DQM)
 );
 
 // Camera Modules
@@ -296,7 +295,7 @@ VGA	vga_0	(	//	Host Side
           .oVGA_BLANK(VGA_BLANK_N),
           .oVGA_CLOCK(VGA_CLK),
           //	Control Signal
-          .iCLK(TD_CLK27),
+          .iCLK(VGA_CLK_in),
           .iRST_N(KEY[1])
 );
 

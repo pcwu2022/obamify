@@ -1,3 +1,6 @@
+`ifndef SDRAM_PARAMS_VH
+`define SDRAM_PARAMS_VH
+
 // Address Space Parameters
 
 `define ROWSTART        8          
@@ -18,15 +21,15 @@
 
 //	Controller Parameter
 ////////////	133 MHz	///////////////
-/*
-parameter	INIT_PER	=	32000;
-parameter	REF_PER		=	1536;
-parameter	SC_CL		  =	3;
-parameter	SC_RCD		=	3;
-parameter	SC_RRD		=	7;
-parameter	SC_PM		  =	1;
-parameter	SC_BL		  =	1;
-*/
+// /*
+// parameter	INIT_PER	=	32000;
+// parameter	REF_PER		=	1536;
+// parameter	SC_CL		  =	3;
+// parameter	SC_RCD		=	3;
+// parameter	SC_RRD		=	7;
+// parameter	SC_PM		  =	1;
+// parameter	SC_BL		  =	1;
+// */
 ///////////////////////////////////////
 ////////////	100 MHz	///////////////
 parameter	INIT_PER	=	24000;
@@ -38,15 +41,15 @@ parameter	SC_PM		  =	1;
 parameter	SC_BL		  =	1;
 ///////////////////////////////////////
 ////////////	50 MHz	///////////////
-/*
-parameter	INIT_PER	=	12000;
-parameter	REF_PER		=	512;
-parameter	SC_CL		  =	3;
-parameter	SC_RCD		=	3;
-parameter	SC_RRD		=	7;
-parameter	SC_PM		  =	1;
-parameter	SC_BL		  =	1;
-*/
+// /*
+// parameter	INIT_PER	=	12000;
+// parameter	REF_PER		=	512;
+// parameter	SC_CL		  =	3;
+// parameter	SC_RCD		=	3;
+// parameter	SC_RRD		=	7;
+// parameter	SC_PM		  =	1;
+// parameter	SC_BL		  =	1;
+// */
 ///////////////////////////////////////
 
 //	SDRAM Parameter
@@ -56,3 +59,5 @@ parameter	SDR_BL		=	(SC_PM == 1) ? 3'b111	:
 							        (SC_BL == 4) ? 3'b010 : 3'b011;
 parameter	SDR_BT		=	1'b0;	//	1'b0 : Sequential  1'b1 :	Interteave
 parameter	SDR_CL		=	(SC_CL == 2) ? 3'b10 : 3'b11;
+
+`endif // SDRAM_PARAMS_VH
