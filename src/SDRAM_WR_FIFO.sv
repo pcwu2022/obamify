@@ -50,7 +50,7 @@ module SDRAM_WR_FIFO (
 		dcfifo_mixed_widths_component.lpm_showahead = "OFF",
 		dcfifo_mixed_widths_component.lpm_type = "dcfifo",
 		dcfifo_mixed_widths_component.lpm_width = 32,
-		dcfifo_mixed_widths_component.lpm_widthu = 8,
+		dcfifo_mixed_widths_component.lpm_widthu = 9,
 		dcfifo_mixed_widths_component.lpm_widthu_r = 8,
 		dcfifo_mixed_widths_component.lpm_width_r = 32,
 		dcfifo_mixed_widths_component.overflow_checking = "ON",
