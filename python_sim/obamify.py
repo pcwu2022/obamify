@@ -1,6 +1,6 @@
 import time
 import argparse
-from util import Camera, SRAM, PRNG, VGA, loss_pixel, init_loss, clamp_uint8
+from util import Camera, SRAM, PRNG, VGA, loss_pixel, init_loss, clamp_uint8, select_target_image
 
 # Configuration and constants
 N = 1024
@@ -12,13 +12,14 @@ MAX_LENGTH = 8
 TIME_BETWEEN_FRAMES_MS = 50  # 50 ms
 
 parser = argparse.ArgumentParser(description='Obamify image transformation')
-parser.add_argument('--input_source', type=str, default='./input/bob.png', help='Path to source image')
-parser.add_argument('--input_target', type=str, default='./input/obama.png', help='Path to target image')
+parser.add_argument('--input_source', type=str, default='./input/source_0.png', help='Path to source image')
+parser.add_argument('--input_target', type=str, default='none', help='Path to target image')
 parser.add_argument('--output_file', type=str, default='./output/obamified.png', help='Path to output image')
 args = parser.parse_args()
 
 INPUT_SOURCE = args.input_source
-INPUT_TARGET = args.input_target
+INPUT_TARGETS = [f'./input/target_{i}.png' for i in range(5)]
+INPUT_TARGET = select_target_image(INPUT_SOURCE, INPUT_TARGETS, W, H) if args.input_target == 'none' else args.input_target
 OUTPUT_FILE = args.output_file
 
 MOVEMENTS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
@@ -88,7 +89,7 @@ def main(source_file=INPUT_SOURCE, target_file=INPUT_TARGET, output_file=OUTPUT_
 	# save loss to the 4th byte
 	init_loss(SRAM_S, SRAM_T, W, H)
 	VGA(SRAM_S, output_file, W, H)
-	time.sleep(1)
+	time.sleep(5)  # wait 5 seconds before starting obamify loop
 	
 	for epoch in range(N):
 		sum_loss = 0

@@ -104,3 +104,24 @@ def init_loss(sram_s, sram_t, width, height):
 			pixel_t = sram_t.getItem(i, j)
 			pixel_s[3] = loss_pixel(pixel_s, pixel_t)
 			sram_s.setItem(i, j, pixel_s)
+
+# compare the source and various target images and pick the target image with the lowest loss
+def select_target_image(source_file, target_files, width, height):
+	print("Selecting best target image based on initial loss...")
+	source = Camera(source_file, width, height)
+	min_loss = None
+	best_target = None
+	for target_file in target_files:
+		target = Camera(target_file, width, height)
+		total_loss = 0
+		for i in range(width):
+			for j in range(height):
+				pixel_s = source[i][j]
+				pixel_t = target[i][j]
+				total_loss += loss_pixel(pixel_s, pixel_t)
+		print(f"Average loss for target {target_file}: {total_loss / (width * height):.2f}")
+		if min_loss is None or total_loss < min_loss:
+			min_loss = total_loss
+			best_target = target_file
+	print(f"Selected target image: {best_target} with loss {min_loss / (width * height):.2f}")
+	return best_target
