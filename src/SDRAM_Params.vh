@@ -14,8 +14,8 @@
 
 `define  ASIZE          23      // total address width of the SDRAM
 `define  DSIZE          32      // Width of data bus to SDRAMS
-`define  WRSIZE         24      // Width of data bus in SDRAM Controller
-`define  RDSIZE         24      // Width of data bus out SDRAM Controller
+`define  WRSIZE         32      // Width of data bus in SDRAM Controller
+`define  RDSIZE         32      // Width of data bus out SDRAM Controller
 
 //parameter	INIT_PER	=	100;		//	For Simulation
 

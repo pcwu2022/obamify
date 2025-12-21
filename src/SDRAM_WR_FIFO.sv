@@ -3,7 +3,7 @@
 // synopsys translate_on
 module SDRAM_WR_FIFO (
 	input logic	         aclr,
-	input logic	 [23:0]  data,
+	input logic	 [31:0]  data,
 	input logic	         rdclk,
 	input logic	         rdreq,
 	input logic	         wrclk,
@@ -49,8 +49,8 @@ module SDRAM_WR_FIFO (
 		dcfifo_mixed_widths_component.lpm_numwords = 512,
 		dcfifo_mixed_widths_component.lpm_showahead = "OFF",
 		dcfifo_mixed_widths_component.lpm_type = "dcfifo",
-		dcfifo_mixed_widths_component.lpm_width = 16,
-		dcfifo_mixed_widths_component.lpm_widthu = 9,
+		dcfifo_mixed_widths_component.lpm_width = 32,
+		dcfifo_mixed_widths_component.lpm_widthu = 8,
 		dcfifo_mixed_widths_component.lpm_widthu_r = 8,
 		dcfifo_mixed_widths_component.lpm_width_r = 32,
 		dcfifo_mixed_widths_component.overflow_checking = "ON",

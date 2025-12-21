@@ -8,7 +8,7 @@ module SDRAM_RD_FIFO (
 	input logic	         rdreq,
 	input logic	         wrclk,
 	input logic	         wrreq,
-	output logic [23:0]  q,
+	output logic [31:0]  q,
 	output logic [7:0]   wrusedw
 );
 
@@ -21,9 +21,9 @@ module SDRAM_RD_FIFO (
 // `endif
 
 	wire [7:0] sub_wire0;
-	wire [23:0] sub_wire1;
+	wire [31:0] sub_wire1;
 	assign wrusedw = sub_wire0[7:0];
-	assign q = sub_wire1[23:0];
+	assign q = sub_wire1[31:0];
 
 	dcfifo_mixed_widths	dcfifo_mixed_widths_component (
 				.wrclk (wrclk),
@@ -50,8 +50,8 @@ module SDRAM_RD_FIFO (
 		dcfifo_mixed_widths_component.lpm_type = "dcfifo",
 		dcfifo_mixed_widths_component.lpm_width = 32,
 		dcfifo_mixed_widths_component.lpm_widthu = 8,
-		dcfifo_mixed_widths_component.lpm_widthu_r = 9,
-		dcfifo_mixed_widths_component.lpm_width_r = 16,
+		dcfifo_mixed_widths_component.lpm_widthu_r = 8,
+		dcfifo_mixed_widths_component.lpm_width_r = 32,
 		dcfifo_mixed_widths_component.overflow_checking = "ON",
 		dcfifo_mixed_widths_component.rdsync_delaypipe = 4,
 		dcfifo_mixed_widths_component.underflow_checking = "ON",
