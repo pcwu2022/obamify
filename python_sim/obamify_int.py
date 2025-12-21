@@ -1,22 +1,28 @@
 from PIL import Image
 import matplotlib.pyplot as plt
 import time
+import argparse
 
 # Configuration and constants
 N = 1024
-M = 10240
+M = 1024
 W = 128
 H = 128
-MAX_LENGTH = 20
+MAX_LENGTH = 8
 
-INPUT_SOURCE = './input/grayscale.png'
-INPUT_TARGETS = ['./input/vangogh.png']
-OUTPUT_FILE = './output/obamified_int.png'
+TIME_BETWEEN_FRAMES_MS = 50  # 50 ms
 
-# Mean is fixed to 127; std is chosen as 64 (easy bit-shift friendly)
-MEAN = 128
-STD = 64
-_CONST_128_SQ = 128 * 128
+parser = argparse.ArgumentParser(description='Obamify image transformation')
+parser.add_argument('--input_source', type=str, default='./input/bob.png', help='Path to source image')
+parser.add_argument('--input_target', type=str, default='./input/obama.png', help='Path to target image')
+parser.add_argument('--output_file', type=str, default='./output/obamified_int.png', help='Path to output image')
+args = parser.parse_args()
+
+INPUT_SOURCE = args.input_source
+INPUT_TARGET = args.input_target
+OUTPUT_FILE = args.output_file
+
+MOVEMENTS = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 """ Utility Functions """
 
@@ -25,21 +31,6 @@ def clamp_uint8(v):
 	if v < 0: return 0
 	if v > 255: return 255
 	return v
-
-# Integer encode/decode to map original 0..255 into a centered 0..255 "normalized" space
-def encode_channel(channel):
-	# channel: 0..255 -> encoded: 0..255, center at MEAN
-	return clamp_uint8(((channel - MEAN) * 127) // STD + MEAN)
-
-def decode_channel(encoded):
-	# encoded: 0..255 -> approximate original 0..255
-	return clamp_uint8(((encoded - MEAN) * STD + _CONST_128_SQ) // 128)
-
-def encode_pixel(pixel):
-	return [encode_channel(pixel[0]), encode_channel(pixel[1]), encode_channel(pixel[2]), pixel[3]]
-
-def decode_pixel(pixel):
-	return [decode_channel(pixel[0]), decode_channel(pixel[1]), decode_channel(pixel[2]), pixel[3]]
 
 """ Other Modules """
 
@@ -57,7 +48,7 @@ def Camera(file_path, width=W, height=H):
 			nested[x][y] = [clamp_uint8(r), clamp_uint8(g), clamp_uint8(b), 255]
 
 	# Preprocessing: encode into the integer "normalized" space
-	encoded = [[encode_pixel(nested[x][y]) for y in range(height)] for x in range(width)]
+	encoded = [[nested[x][y] for y in range(height)] for x in range(width)]
 	return encoded
 
 
@@ -102,12 +93,10 @@ class PRNG:
 
 # global deterministic RNG instance
 RNG = PRNG(1)
-def setseed(seed):
-	RNG.setseed(seed)
 
 def VGA(output_file=OUTPUT_FILE, width=W, height=H):
 	# read from global SRAM_S
-	nested = [[decode_pixel(SRAM_S.getItem(x, y)) for y in range(H)] for x in range(W)]
+	nested = [[SRAM_S.getItem(x, y) for y in range(H)] for x in range(W)]
 	# Accepts nested uint8 original-style pixels and saves image to disk
 	data = []
 	loss_image = []
@@ -128,59 +117,71 @@ def VGA(output_file=OUTPUT_FILE, width=W, height=H):
 	loss_img.putdata(loss_image)
 	loss_img.save(output_file.replace('.png', '_loss.png'))
     
-
-""" Obamify Algorithm """
-
-def loss_pixel(i, j, k, l):
-	# return small uint8 loss between SRAM_S(i,j) and SRAM_T(k,l)
-	rgb_s = SRAM_S.getItem(i, j)
-	rgb_t = SRAM_T.getItem(k, l)
-	d0 = int(rgb_s[0]) - int(rgb_t[0])
-	d1 = int(rgb_s[1]) - int(rgb_t[1])
-	d2 = int(rgb_s[2]) - int(rgb_t[2])
+def loss_pixel(pixel_s, pixel_t):
+	d0 = int(pixel_s[0]) - int(pixel_t[0])
+	d1 = int(pixel_s[1]) - int(pixel_t[1])
+	d2 = int(pixel_s[2]) - int(pixel_t[2])
 	sq = (d0 * d0 + d1 * d1 + d2 * d2) // 256
 	return clamp_uint8(sq)
 
 def init_loss():
 	for i in range(W):
 		for j in range(H):
-			p = SRAM_S.getItem(i, j)
-			p[3] = loss_pixel(i, j, i, j)
-			SRAM_S.setItem(i, j, p)
+			pixel_s = SRAM_S.getItem(i, j)
+			pixel_t = SRAM_T.getItem(i, j)
+			pixel_s[3] = loss_pixel(pixel_s, pixel_t)
+			SRAM_S.setItem(i, j, pixel_s)
 
-def random_swap(i, j):
-	movements = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-	l_i = RNG.randint(1, MAX_LENGTH)
-	l_j = RNG.randint(1, MAX_LENGTH)
-	idx = RNG.randint(0, 3)
-	di, dj = movements[idx]
-	k = i + di * l_i
-	l = j + dj * l_j
-	if k < 0 or k >= W or l < 0 or l >= H:
-		return 0, 0, 0
-	# compute old loss by reading stored loss bytes
-	p_i = SRAM_S.getItem(i, j)
-	p_k = SRAM_S.getItem(k, l)
-	loss_old = int(p_i[3]) + int(p_k[3])
-	loss_move_forward = loss_pixel(i, j, k, l)
-	loss_move_reverse = loss_pixel(k, l, i, j)
+""" Obamify Algorithm """
+
+def obamify():
+	
+	# === Cycle 0 - CALC_INIT: generate random movement === #
+	random_21_bits = RNG.randint(0, 2**21 - 1)
+	deviation = random_21_bits % MAX_LENGTH	# select the 0-4 bits for deviation
+	direction = (random_21_bits >> 5) % 4	# select the 5-6 bits for direction
+	i = (random_21_bits >> 7) % W			# select the 7-13 bits for i
+	j = (random_21_bits >> 14) % H			# select the 14-20 bits for j
+	di, dj = MOVEMENTS[direction]
+	k = i + (deviation if di != 0 else 0)
+	l = j + (deviation if dj != 0 else 0)
+	if k < 0 or k >= W or l < 0 or l >= H: return False, 0
+	
+	# === Cycle 1 - READ_SOURCE_1: read source pixel 1 === #
+	pixel_s_1 = SRAM_S.getItem(i, j)
+	# === Cycle 2 - READ_SOURCE_2: read source pixel 2 === #
+	pixel_s_2 = SRAM_S.getItem(k, l)
+	# === Cycle 3 - READ_TARGET_1: read target pixel 1 === #
+	pixel_t_1 = SRAM_T.getItem(i, j)
+	# === Cycle 4 - READ_TARGET_2: read target pixel 2 === #
+	pixel_t_2 = SRAM_T.getItem(k, l)
+	
+	# === Cycle 5 - CALC_LOSS: calculate swap loss === #
+	loss_old = int(pixel_s_1[3]) + int(pixel_s_2[3])
+	loss_move_forward = loss_pixel(pixel_s_1, pixel_t_2)
+	loss_move_reverse = loss_pixel(pixel_s_2, pixel_t_1)
 	loss_new = loss_move_forward + loss_move_reverse
-	if loss_new <= loss_old:
-		# assign losses corresponding to the colors that will end up at each position
-		# after the swap: the color originally at (k,l) moves to (i,j), so
-		# SRAM_S[i,j].loss should be loss_move_reverse; and vice-versa.
-		p_i[3] = clamp_uint8(loss_move_reverse)
-		p_k[3] = clamp_uint8(loss_move_forward)
-		# swap RGB channels
-		for c in range(3):
-			p_i[c], p_k[c] = p_k[c], p_i[c]
-		SRAM_S.setItem(i, j, p_i)
-		SRAM_S.setItem(k, l, p_k)
-		return di * l_i, dj * l_j, clamp_uint8(loss_new)
-	return 0, 0, loss_old
+	
+	if loss_new > loss_old: return True, loss_old
+	
+	# perform swap and update loss bytes
+	pixel_s_1[3] = clamp_uint8(loss_move_reverse)
+	pixel_s_2[3] = clamp_uint8(loss_move_forward)
+	
+	# swap RGB channels
+	pixel_s_1[0], pixel_s_2[0] = pixel_s_2[0], pixel_s_1[0]
+	pixel_s_1[1], pixel_s_2[1] = pixel_s_2[1], pixel_s_1[1]
+	pixel_s_1[2], pixel_s_2[2] = pixel_s_2[2], pixel_s_1[2]
+	
+	# write back
+	# === Cycle 6 - WRITE_SOURCE_1: write source pixel 1 === #
+	SRAM_S.setItem(i, j, pixel_s_1)
+	# === Cycle 7 - WRITE_SOURCE_2: write source pixel 2 === #
+	SRAM_S.setItem(k, l, pixel_s_2)
 
+	return True, clamp_uint8(loss_new)
 
-def run_obamify(source_file=INPUT_SOURCE, target_file=INPUT_TARGETS[0], output_file=OUTPUT_FILE):
+def main(source_file=INPUT_SOURCE, target_file=INPUT_TARGET, output_file=OUTPUT_FILE):
 	# Load originals via Camera
 	source = Camera(source_file, W, H)
 	target = Camera(target_file, W, H)
@@ -193,28 +194,26 @@ def run_obamify(source_file=INPUT_SOURCE, target_file=INPUT_TARGETS[0], output_f
 	# save loss to the 4th byte
 	init_loss()
 	VGA(output_file, W, H)
-	# return
+	time.sleep(1)
 	
 	for epoch in range(N):
 		sum_loss = 0
 		loop_start = time.perf_counter()
-		for _ in range(M):
-			i = RNG.randint(0, W - 1)
-			j = RNG.randint(0, H - 1)
-			
-			di, dj, loss = random_swap(i, j)
-			
-			if 0 <= i + di < W and 0 <= j + dj < H:
-				sum_loss += loss
+
+		for iteration in range(M):
+			valid, loss = obamify()
+			if valid: sum_loss += loss
+		
 		loop_end = time.perf_counter()
-		loop_time_us = (loop_end - loop_start) * 1_000_000
+		loop_time_ms = (loop_end - loop_start) * 1_000
 
 		VGA(output_file, W, H)
 
-		print(f"Epoch {epoch}: loss = {sum_loss / M}, loop time = {loop_time_us:.2f} µs")
+		print(f"Epoch {epoch}: loss = {sum_loss / M}, loop time = {loop_time_ms:.2f} ms")
 		
-		# time.sleep(max(0, 0.05 - loop_time_us / 1_000_000))
+		time.sleep(max(0, TIME_BETWEEN_FRAMES_MS - loop_time_ms) / 1000.0)
+		
 		if sum_loss == 0: break
 
 if __name__ == '__main__':
-	run_obamify()
+	main()
