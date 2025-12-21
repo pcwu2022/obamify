@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 
 INPUT_SOURCE = './input/obama_2.png'
-INPUT_TARGETS = ['./input/t2.png', './input/obama.png', './input/bill.png', './input/vangogh.png', './input/fk.png']
+INPUT_TARGETS = ['./input/target_0.png', './input/target_1.png', './input/target_2.png', './input/target_3.png', './input/target_4.png']
 
 def load_image(path):
     """Load image as uint8 numpy array (H, W, 3)."""
