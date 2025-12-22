@@ -50,9 +50,9 @@ parameter	V_TOTAL	=	V_FRONT+V_SYNC+V_BACK+V_ACT;
 assign	oVGA_SYNC	=	1'b1;			//	This pin is unused.
 assign	oVGA_BLANK	=	~((H_Cont<H_BLANK)||(V_Cont<V_BLANK));
 assign	oVGA_CLOCK	=	~iCLK;
-assign	oVGA_R		=	10'b0000010100; //iRed;
-assign	oVGA_G		=	10'b0000010100; //iGreen;
-assign	oVGA_B		=	10'b0000010100; //iBlue;
+assign	oVGA_R		=	(oVGA_BLANK == 1'b1) ? 10'b1000000000 : 10'b0000000000; //iRed;
+assign	oVGA_G		=	10'b0000000000; //iGreen;
+assign	oVGA_B		=	10'b0000000000; //iBlue;
 assign	oAddress	=	Current_Y*H_ACT+Current_X;
 assign	oRequest	=	((H_Cont>=H_BLANK && H_Cont<H_TOTAL)	&&  (V_Cont>=V_BLANK && V_Cont<V_TOTAL));
 assign	Current_X	=	(H_Cont>=H_BLANK)	?	H_Cont-H_BLANK	:	11'h0	;

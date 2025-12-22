@@ -286,9 +286,9 @@ VGA	vga_0	(	//	Host Side
           .iBlue(mBlue),
           .oRequest(VGA_Read),
           //	VGA Side
-          .oVGA_R(vga_r10 ),
-          .oVGA_G(vga_g10 ),
-          .oVGA_B(vga_b10 ),
+          .oVGA_R(vga_r10),
+          .oVGA_G(vga_g10),
+          .oVGA_B(vga_b10),
           .oVGA_HS(VGA_HS),
           .oVGA_VS(VGA_VS),
           .oVGA_SYNC(VGA_SYNC_N),
