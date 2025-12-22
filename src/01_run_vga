@@ -1,0 +1,1 @@
+vcs -f vga.f -full64 -R -debug_access+all -sverilog +access+rw | tee sim.log

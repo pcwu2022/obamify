@@ -26,6 +26,9 @@ logic  [10:0] H_Cont, H_Cont_nxt;
 logic  [10:0] V_Cont, V_Cont_nxt;
 logic hs_nxt, hs;
 logic vs_nxt, vs;
+logic o_addr_nxt, o_addr;
+logic o_blank_nxt, o_blank;
+logic o_request_nxt, o_request;
 
 ////////////////////////////////////////////////////////////
 //	Horizontal Parameter
@@ -51,45 +54,47 @@ assign	oVGA_R		=	10'b0000010100; //iRed;
 assign	oVGA_G		=	10'b0000010100; //iGreen;
 assign	oVGA_B		=	10'b0000010100; //iBlue;
 assign	oAddress	=	Current_Y*H_ACT+Current_X;
-assign	oRequest	=	((H_Cont>=H_BLANK && H_Cont<H_TOTAL)	&&
-						 (V_Cont>=V_BLANK && V_Cont<V_TOTAL));
+assign	oRequest	=	((H_Cont>=H_BLANK && H_Cont<H_TOTAL)	&&  (V_Cont>=V_BLANK && V_Cont<V_TOTAL));
 assign	Current_X	=	(H_Cont>=H_BLANK)	?	H_Cont-H_BLANK	:	11'h0	;
 assign	Current_Y	=	(V_Cont>=V_BLANK)	?	V_Cont-V_BLANK	:	11'h0	;
 assign	oVGA_HS		=	hs;
 assign	oVGA_VS		=	vs;
+
 //	Horizontal Generator: Refer to the pixel clock
 always_comb begin
-	if(H_Cont<H_TOTAL)
-		H_Cont_nxt	=	H_Cont+1'b1;
+	if(H_Cont<H_TOTAL-1)
+		H_Cont_nxt = H_Cont+1'b1;
 	else
-		H_Cont_nxt	=	0;
+		H_Cont_nxt = 0;
 	//	Horizontal Sync
-	if(H_Cont==H_FRONT-1)			//	Front porch end
+	if(H_Cont==H_FRONT-1)		begin	//	Front porch end
 		hs_nxt	=	1'b0;
-	else
-		hs_nxt	=	hs;
-	if(H_Cont==H_FRONT+H_SYNC-1)	//	Sync pulse end
+	end
+	else if(H_Cont==H_FRONT+H_SYNC-1)	begin//	Sync pulse end
 		hs_nxt	=	1'b1;
-	else
+	end
+	else begin
 		hs_nxt	=	hs;
+	end
 end
 
 //	Vertical Generator: Refer to the horizontal sync
 always_comb begin
 	if (hs_nxt == 1'b1 && hs == 1'b0) begin
-		if(V_Cont<V_TOTAL)
+		if(V_Cont<V_TOTAL-1)
 			V_Cont_nxt	=	V_Cont+1'b1;
 		else
 			V_Cont_nxt	=	0;
 		//	Vertical Sync
-		if(V_Cont==V_FRONT-1)			//	Front porch end
+		if(V_Cont==V_FRONT-1)	begin		//	Front porch end
 			vs_nxt	=	1'b0;
-		else
-			vs_nxt	=	vs;
-		if(V_Cont==V_FRONT+V_SYNC-1)	//	Sync pulse end
+		end
+		else if(V_Cont==V_FRONT+V_SYNC-1)	begin	//	Sync pulse end
 			vs_nxt	=	1'b1;
-		else
+		end
+		else begin
 			vs_nxt	=	vs;
+		end
 	end
 	else begin
 		V_Cont_nxt = V_Cont;
