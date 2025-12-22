@@ -194,26 +194,26 @@ SDRAM_control	sdram_ctrl_0	(
 	.RESET_N(KEY[1]),
 	.CLK(sdram_ctrl_clk),
 	// FIFO Write Side 1: from Camera raw2RGB
-	.WR1_DATA({camera_Red, camera_Green, camera_Blue}), // Data Input
+	.WR1_DATA({8'd0, camera_Red, camera_Green, camera_Blue}), // Data Input
 	.WR1(raw2RGB_valid),          						// Write Request
 	.WR1_ADDR(23'd0),     								// Write Start Address
-	.WR1_MAX_ADDR(23'd12288), 							// Write Max Address (128x128x3/4 = 12288)
+	.WR1_MAX_ADDR(23'd16384), 							// Write Max Address (128x128x3/4 = 12288)
 	.WR1_LENGTH(8'd64),									// Write Burst Length
 	.WR1_LOAD(KEY[1]),     								// Write FIFO Clear
 	.WR1_CLK(D5M_PIXLCLK),      							// Write FIFO Clock
 	// FIFO Write Side 2: from Memory Transfer
 	.WR2_DATA(SRAM_to_SDRAM_data),          			// Data Input
 	.WR2(SRAM_to_SDRAM_valid),          				// Write Request
-	.WR2_ADDR(23'd12288*(iter_cnt+1)),     				// Write Start Address
-	.WR2_MAX_ADDR(23'd12288*(iter_cnt+2)), 				// Write Max Address
+	.WR2_ADDR(23'd16384*(iter_cnt+1)),     				// Write Start Address
+	.WR2_MAX_ADDR(23'd16384*(iter_cnt+2)), 				// Write Max Address
 	.WR2_LENGTH(8'd64),									// Write Burst Length
 	.WR2_LOAD(KEY[1]),     								// Write FIFO Clear
 	.WR2_CLK(CLOCK_50),      								// Write FIFO Clock
 	// FIFO Read Side 1: from VGA
 	.RD1_DATA(SDRAM_to_VGA_data),     					// Data Output
 	.RD1(VGA_Read),          							// Read Request
-	.RD1_ADDR(23'd12288*iter_cnt),     					// Read Start Address
-	.RD1_MAX_ADDR(23'd12288*(iter_cnt+1)), 				// Read Max Address
+	.RD1_ADDR(23'd16384*iter_cnt),     					// Read Start Address
+	.RD1_MAX_ADDR(23'd16384*(iter_cnt+1)), 				// Read Max Address
 	.RD1_LENGTH(8'd64),									// Read Burst Length
 	.RD1_LOAD(KEY[1]),     								// Read FIFO Clear
 	.RD1_CLK(VGA_CLK),      							// Read FIFO Clock
@@ -221,7 +221,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_DATA(SDRAM_to_SRAM_data),     					// Data Output
 	.RD2(SRAM_Read),          							// Read Request
 	.RD2_ADDR(23'd0),     								// Read Start Address
-	.RD2_MAX_ADDR(23'd12288), 							// Read Max Address
+	.RD2_MAX_ADDR(23'd16384), 							// Read Max Address
 	.RD2_LENGTH(8'd64),									// Read Burst Length
 	.RD2_LOAD(KEY[1] || DSP_start),     				// Read FIFO Clear
 	.RD2_CLK(CLOCK_50),      							// Read FIFO Clock
