@@ -144,6 +144,16 @@ Debounce deb0(
 	.o_neg(keydown)
 );
 
+Reset_Delay reset_delay0(
+	.iCLK(CLOCK_50),
+	.iRST(KEY[1]),
+	.oRST_0(DLY_RST_0),
+	.oRST_1(DLY_RST_1),
+	.oRST_2(DLY_RST_2),
+	.oRST_3(DLY_RST_3),
+	.oRST_4(DLY_RST_4)
+);
+
 // pll
 sdram_pll pll_0(
 	.inclk0(CLOCK_50),
@@ -182,12 +192,19 @@ logic [9:0] mRed;
 logic [9:0] mGreen;
 logic [9:0] mBlue;
 logic sdram_ctrl_clk;
+logic DLY_RST_0, DLY_RST_1, DLY_RST_2, DLY_RST_3, DLY_RST_4;
 
-assign VGA_R = vga_r10[9:2];
-assign VGA_G = vga_g10[9:2];
-assign VGA_B = vga_b10[9:2];
-assign D5M_TRIGGER = 1'b1;
-assign D5M_RESET_N = KEY[1];
+assign VGA_R 		= vga_r10[9:2];
+assign VGA_G 		= vga_g10[9:2];
+assign VGA_B 		= vga_b10[9:2];
+assign D5M_TRIGGER 	= 1'b1;
+assign D5M_RESET_N 	= DLY_RST_1;
+
+// assign mRed 		= {SDRAM_to_VGA_data[23:16], 2'b00};
+assign mRed 		= {SDRAM_to_VGA_data[7:0], 2'b00};
+assign mGreen 		= {SDRAM_to_VGA_data[15:8], 2'b00};
+// assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
+assign mBlue 		= {SDRAM_to_VGA_data[23:16], 2'b00};
 
 // SDRAM Controller
 SDRAM_control	sdram_ctrl_0	(	
@@ -198,32 +215,32 @@ SDRAM_control	sdram_ctrl_0	(
 	.WR1(raw2RGB_valid),          						// Write Request
 	.WR1_ADDR(23'd0),     								// Write Start Address
 	.WR1_MAX_ADDR(23'd16384), 							// Write Max Address (128x128x3/4 = 12288)
-	.WR1_LENGTH(8'd64),									// Write Burst Length
-	.WR1_LOAD(KEY[1]),     								// Write FIFO Clear
+	.WR1_LENGTH(8'd128),									// Write Burst Length
+	.WR1_LOAD(!DLY_RST_0),     								// Write FIFO Clear
 	.WR1_CLK(D5M_PIXLCLK),      							// Write FIFO Clock
 	// FIFO Write Side 2: from Memory Transfer
 	.WR2_DATA(SRAM_to_SDRAM_data),          			// Data Input
 	.WR2(SRAM_to_SDRAM_valid),          				// Write Request
 	.WR2_ADDR(23'd16384*(iter_cnt+1)),     				// Write Start Address
 	.WR2_MAX_ADDR(23'd16384*(iter_cnt+2)), 				// Write Max Address
-	.WR2_LENGTH(8'd64),									// Write Burst Length
-	.WR2_LOAD(KEY[1]),     								// Write FIFO Clear
+	.WR2_LENGTH(8'd128),									// Write Burst Length
+	.WR2_LOAD(!DLY_RST_0),     								// Write FIFO Clear
 	.WR2_CLK(CLOCK_50),      								// Write FIFO Clock
 	// FIFO Read Side 1: from VGA
 	.RD1_DATA(SDRAM_to_VGA_data),     					// Data Output
 	.RD1(VGA_Read),          							// Read Request
 	.RD1_ADDR(23'd16384*iter_cnt),     					// Read Start Address
 	.RD1_MAX_ADDR(23'd16384*(iter_cnt+1)), 				// Read Max Address
-	.RD1_LENGTH(8'd64),									// Read Burst Length
-	.RD1_LOAD(KEY[1]),     								// Read FIFO Clear
+	.RD1_LENGTH(8'd128),									// Read Burst Length
+	.RD1_LOAD(!DLY_RST_0),     							// Read FIFO Clear
 	.RD1_CLK(VGA_CLK),      							// Read FIFO Clock
 	// FIFO Read Side 2: from Memory Transfer
 	.RD2_DATA(SDRAM_to_SRAM_data),     					// Data Output
 	.RD2(SRAM_Read),          							// Read Request
 	.RD2_ADDR(23'd0),     								// Read Start Address
 	.RD2_MAX_ADDR(23'd16384), 							// Read Max Address
-	.RD2_LENGTH(8'd64),									// Read Burst Length
-	.RD2_LOAD(KEY[1] || DSP_start),     				// Read FIFO Clear
+	.RD2_LENGTH(8'd128),									// Read Burst Length
+	.RD2_LOAD(!DLY_RST_0 || DSP_start),     				// Read FIFO Clear
 	.RD2_CLK(CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
 	.SA(DRAM_ADDR),
@@ -240,9 +257,9 @@ SDRAM_control	sdram_ctrl_0	(
 // Camera Modules
 Camera_I2C_config  camera_i2c_0 (
 	.iCLK(CLOCK_50),
-	.iRST_N(KEY[1]),
+	.iRST_N(DLY_RST_2),
 	.iZOOM_MODE_SW(1'b0),
-	.iEXPOSURE_ADJ(1'b0),
+	.iEXPOSURE_ADJ(1'b1),
 	.iEXPOSURE_DEC_p(1'b0),
 	// I2C Side
 	.I2C_SCLK(D5M_SCLK),
@@ -256,7 +273,7 @@ Camera_capture  camera_capture_0 (
 	.iSTART(KEY[1] | keydown),
 	.iEND(1'b0),
 	.iCLK(D5M_PIXLCLK),
-	.iRST(KEY[1]),
+	.iRST(DLY_RST_2),
 	.oDATA(Camera_raw_data),
 	.oX_Cnt(raw_X),
 	.oY_Cnt(raw_Y),
@@ -266,7 +283,7 @@ Camera_capture  camera_capture_0 (
 
 Camera_raw2RGB  camera_raw2RGB_0 (
 	.iCLK(D5M_PIXLCLK),
-	.iRST(KEY[1]),
+	.iRST(DLY_RST_1),
 	.iData(Camera_raw_data),
 	.iDval(Camera_valid),
 	.iX_Cnt(raw_X),
@@ -281,22 +298,22 @@ Camera_raw2RGB  camera_raw2RGB_0 (
 
 // VGA Module
 VGA	vga_0	(	//	Host Side
-          .iRed(mRed),
-          .iGreen(mGreen),
-          .iBlue(mBlue),
-          .oRequest(VGA_Read),
-          //	VGA Side
-          .oVGA_R(vga_r10),
-          .oVGA_G(vga_g10),
-          .oVGA_B(vga_b10),
-          .oVGA_HS(VGA_HS),
-          .oVGA_VS(VGA_VS),
-          .oVGA_SYNC(VGA_SYNC_N),
-          .oVGA_BLANK(VGA_BLANK_N),
-          .oVGA_CLOCK(VGA_CLK),
-          //	Control Signal
-          .iCLK(VGA_CLK_in),
-          .iRST_N(KEY[1])
+	.iRed(mRed),
+	.iGreen(mGreen),
+	.iBlue(mBlue),
+	.oRequest(VGA_Read),
+	//	VGA Side
+	.oVGA_R(vga_r10),
+	.oVGA_G(vga_g10),
+	.oVGA_B(vga_b10),
+	.oVGA_HS(VGA_HS),
+	.oVGA_VS(VGA_VS),
+	.oVGA_SYNC(VGA_SYNC_N),
+	.oVGA_BLANK(VGA_BLANK_N),
+	.oVGA_CLOCK(VGA_CLK),
+	//	Control Signal
+	.iCLK(VGA_CLK_in),
+	.iRST_N(DLY_RST_2)
 );
 
 // tmp, for testing

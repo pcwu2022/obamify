@@ -47,14 +47,32 @@ parameter	V_ACT	=	480;
 parameter	V_BLANK	=	V_FRONT+V_SYNC+V_BACK;
 parameter	V_TOTAL	=	V_FRONT+V_SYNC+V_BACK+V_ACT;
 ////////////////////////////////////////////////////////////
+// Image Parameter
+parameter	IMG_H	=	128;
+parameter	IMG_V	=	128;
+parameter   H_MAR   =   (H_ACT - IMG_H)/2;
+parameter   V_MAR   =   (V_ACT - IMG_V)/2;
+////////////////////////////////////////////////////////////
+
 assign	oVGA_SYNC	=	1'b1;			//	This pin is unused.
 assign	oVGA_BLANK	=	~((H_Cont<H_BLANK)||(V_Cont<V_BLANK));
 assign	oVGA_CLOCK	=	~iCLK;
-assign	oVGA_R		=	(oVGA_BLANK == 1'b1) ? 10'b1000000000 : 10'b0000000000; //iRed;
-assign	oVGA_G		=	10'b0000000000; //iGreen;
-assign	oVGA_B		=	10'b0000000000; //iBlue;
+
+assign	oVGA_R		=	(o_request == 1'b1) ? iRed 		: 10'b0;   //(oVGA_BLANK == 1'b1) ? 10'b1000000000 : 10'b0000000000; //iRed;
+assign	oVGA_G		=	(o_request == 1'b1) ? iGreen 	: 10'b0; //10'b0000000000; //iGreen;
+assign	oVGA_B		=	(o_request == 1'b1) ? iBlue 	: 10'b0;  //10'b0000000000; //iBlue;
+
+// assign	oVGA_R		=	(o_request == 1'b1) ? 10'b1000000000 	: 10'b0;   //(oVGA_BLANK == 1'b1) ? 10'b1000000000 : 10'b0000000000; //iRed;
+// assign	oVGA_G		=	(o_request == 1'b1) ? 10'b0100000000 	: 10'b0; //10'b0000000000; //iGreen;
+// assign	oVGA_B		=	(o_request == 1'b1) ? 10'b1100000000 	: 10'b0;  //10'b0000000000; //iBlue;
+
+// assign	oVGA_R		=	(oVGA_BLANK == 1'b1) ? 10'b1000000000   : 10'b0;
+// assign	oVGA_G		=	(oVGA_BLANK == 1'b1) ? 10'b0100000000 	: 10'b0;
+// assign	oVGA_B		=	(oVGA_BLANK == 1'b1) ? 10'b1100000000 	: 10'b0;
+
 assign	oAddress	=	Current_Y*H_ACT+Current_X;
-assign	oRequest	=	((H_Cont>=H_BLANK && H_Cont<H_TOTAL)	&&  (V_Cont>=V_BLANK && V_Cont<V_TOTAL));
+assign	oRequest	=	((H_Cont>=H_BLANK+H_MAR-1 && H_Cont<=H_BLANK+H_MAR+IMG_H-2) && (V_Cont>=V_BLANK+V_MAR && V_Cont<=V_BLANK+V_MAR+IMG_V-1));
+
 assign	Current_X	=	(H_Cont>=H_BLANK)	?	H_Cont-H_BLANK	:	11'h0	;
 assign	Current_Y	=	(V_Cont>=V_BLANK)	?	V_Cont-V_BLANK	:	11'h0	;
 assign	oVGA_HS		=	hs;
@@ -103,21 +121,27 @@ always_comb begin
 	
 end
 
+always_comb begin 
+	o_request_nxt = oRequest;
+end
+
 always_ff @(posedge iCLK or negedge iRST_N)
 begin
 	if(!iRST_N)
 	begin
-		H_Cont	<=	0;
-		V_Cont	<=	0;
-		hs	<=	1;
-		vs	<=	1;
+		H_Cont		<=	0;
+		V_Cont		<=	0;
+		hs			<=	1;
+		vs			<=	1;
+		o_request	<=	1'b0;
 	end
 	else
 	begin
-		H_Cont	<=	H_Cont_nxt;
-		V_Cont	<=	V_Cont_nxt;
-		hs	<=	hs_nxt;
-		vs	<=	vs_nxt;
+		H_Cont		<=	H_Cont_nxt;
+		V_Cont		<=	V_Cont_nxt;
+		hs			<=	hs_nxt;
+		vs			<=	vs_nxt;
+		o_request	<=	o_request_nxt;
 	end
 end
 

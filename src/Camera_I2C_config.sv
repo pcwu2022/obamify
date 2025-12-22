@@ -22,7 +22,8 @@ logic [3:0]  mSetup_ST;
 
 //////////////   CMOS sensor registers setting //////////////////////
 
-parameter   default_exposure           = 16'h07c0;
+//parameter   default_exposure           = 16'h07c0;
+parameter   default_exposure           = 16'h03E8;
 parameter   exposure_change_value      = 16'd200;
 
 logic [24:0] combo_cnt;
