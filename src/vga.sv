@@ -13,6 +13,7 @@ module	VGA	(	//	Host Side
 	output oVGA_SYNC,
 	output oVGA_BLANK,
 	output oVGA_CLOCK,
+	output o_cycle_done,
 	//	Control Signal
 	input	 iCLK,
 	input	 iRST_N	
@@ -29,7 +30,7 @@ logic vs_nxt, vs;
 logic o_addr_nxt, o_addr;
 logic o_blank_nxt, o_blank;
 logic o_request_nxt, o_request;
-
+logic o_cycle_done_nxt, o_cycle_done;
 ////////////////////////////////////////////////////////////
 //	Horizontal Parameter
 parameter	H_FRONT	=	16;
@@ -58,15 +59,15 @@ assign	oVGA_SYNC	=	1'b1;			//	This pin is unused.
 assign	oVGA_BLANK	=	~((H_Cont<H_BLANK)||(V_Cont<V_BLANK));
 assign	oVGA_CLOCK	=	~iCLK;
 
-assign	oVGA_R		=	(o_request == 1'b1) ? iRed 		: 10'b0;   //(oVGA_BLANK == 1'b1) ? 10'b1000000000 : 10'b0000000000; //iRed;
-assign	oVGA_G		=	(o_request == 1'b1) ? iGreen 	: 10'b0; //10'b0000000000; //iGreen;
-assign	oVGA_B		=	(o_request == 1'b1) ? iBlue 	: 10'b0;  //10'b0000000000; //iBlue;
+assign	oVGA_R		=	(o_request == 1'b1) ? iRed 		: 10'b0;
+assign	oVGA_G		=	(o_request == 1'b1) ? iGreen 	: 10'b0;
+assign	oVGA_B		=	(o_request == 1'b1) ? iBlue 	: 10'b0;
 
-// assign	oVGA_R		=	(o_request == 1'b1) ? 10'b1000000000 	: 10'b0;   //(oVGA_BLANK == 1'b1) ? 10'b1000000000 : 10'b0000000000; //iRed;
-// assign	oVGA_G		=	(o_request == 1'b1) ? 10'b0100000000 	: 10'b0; //10'b0000000000; //iGreen;
-// assign	oVGA_B		=	(o_request == 1'b1) ? 10'b1100000000 	: 10'b0;  //10'b0000000000; //iBlue;
+// assign	oVGA_R		=	(o_request == 1'b1) ? 10'b1000000000 	: 10'b0; // pure color test with 128x128 image
+// assign	oVGA_G		=	(o_request == 1'b1) ? 10'b0100000000 	: 10'b0;
+// assign	oVGA_B		=	(o_request == 1'b1) ? 10'b1100000000 	: 10'b0;
 
-// assign	oVGA_R		=	(oVGA_BLANK == 1'b1) ? 10'b1000000000   : 10'b0;
+// assign	oVGA_R		=	(oVGA_BLANK == 1'b1) ? 10'b1000000000   : 10'b0; // pure color test with full screen
 // assign	oVGA_G		=	(oVGA_BLANK == 1'b1) ? 10'b0100000000 	: 10'b0;
 // assign	oVGA_B		=	(oVGA_BLANK == 1'b1) ? 10'b1100000000 	: 10'b0;
 
@@ -99,10 +100,14 @@ end
 //	Vertical Generator: Refer to the horizontal sync
 always_comb begin
 	if (hs_nxt == 1'b1 && hs == 1'b0) begin
-		if(V_Cont<V_TOTAL-1)
+		if(V_Cont<V_TOTAL-1) begin
 			V_Cont_nxt	=	V_Cont+1'b1;
-		else
+			o_cycle_done_nxt = 1'b0;
+		end
+		else begin
 			V_Cont_nxt	=	0;
+			o_cycle_done_nxt = 1'b1;
+		end
 		//	Vertical Sync
 		if(V_Cont==V_FRONT-1)	begin		//	Front porch end
 			vs_nxt	=	1'b0;
@@ -134,6 +139,7 @@ begin
 		hs			<=	1;
 		vs			<=	1;
 		o_request	<=	1'b0;
+		o_cycle_done <= 1'b0;
 	end
 	else
 	begin
@@ -142,6 +148,7 @@ begin
 		hs			<=	hs_nxt;
 		vs			<=	vs_nxt;
 		o_request	<=	o_request_nxt;
+		o_cycle_done <= o_cycle_done_nxt;
 	end
 end
 
