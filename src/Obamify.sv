@@ -16,8 +16,8 @@ module Obamify (
 
     // SRAM Controls
     output  [19:0]  o_sram_addr,
-    input   [31:0]  i_sram_data,
-    output  [31:0]  o_sram_data,
+    input   [15:0]  i_sram_data,
+    output  [15:0]  o_sram_data,
     output          o_sram_we       // Write enable for SRAM
 
 );
@@ -91,7 +91,7 @@ logic           epoch_finished_r, epoch_finished_w;
 
 // SRAM control registers
 logic   [19:0]  sram_addr_r, sram_addr_w;
-logic   [31:0]  sram_data_out_r, sram_data_out_w;
+logic   [15:0]  sram_data_out_r, sram_data_out_w;
 logic           sram_we_r, sram_we_w;
 
 // === WIRES === //
@@ -380,7 +380,7 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
         epoch_finished_r <= 1'b0;
         
         sram_addr_r <= 20'd0;
-        sram_data_out_r <= 32'd0;
+        sram_data_out_r <= 16'd0;
         sram_we_r <= 1'b0;
     end else begin
         state_r <= state_w;
