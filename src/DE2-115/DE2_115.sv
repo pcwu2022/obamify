@@ -135,35 +135,6 @@ module DE2_115 (
 	output D5M_XCLKIN
 );
 
-wire keydown;
-
-Debounce deb0(
-	.i_in(KEY[0]),
-	.i_rst_n(KEY[1]),
-	.i_clk(CLOCK_50),
-	.o_neg(keydown)
-);
-
-Reset_Delay reset_delay0(
-	.iCLK(CLOCK_50),
-	.iRST(KEY[1]),
-	.oRST_0(DLY_RST_0),
-	.oRST_1(DLY_RST_1),
-	.oRST_2(DLY_RST_2),
-	.oRST_3(DLY_RST_3),
-	.oRST_4(DLY_RST_4)
-);
-
-// pll
-sdram_pll pll_0(
-	.inclk0(CLOCK_50),
-	.c0(sdram_ctrl_clk),
-	.c1(DRAM_CLK),
-	.c2(D5M_XCLKIN), //25M
-	.c3(VGA_CLK_in),     	//25M 
-	.c4()     			//40M
-);
-
 // SevenHexDecoder seven_dec0(
 // 	.i_hex(random_value),
 // 	.o_seven_ten(HEX1),
@@ -193,6 +164,10 @@ logic [9:0] mGreen;
 logic [9:0] mBlue;
 logic sdram_ctrl_clk;
 logic DLY_RST_0, DLY_RST_1, DLY_RST_2, DLY_RST_3, DLY_RST_4;
+logic auto_start;
+logic [11:0] rCCD_DATA;
+logic        rCCD_LVAL;
+logic        rCCD_FVAL;
 
 assign VGA_R 		= vga_r10[9:2];
 assign VGA_G 		= vga_g10[9:2];
@@ -205,6 +180,37 @@ assign mRed 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 assign mGreen 		= {SDRAM_to_VGA_data[15:8], 2'b00};
 // assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 assign mBlue 		= {SDRAM_to_VGA_data[23:16], 2'b00};
+
+assign auto_start = ((KEY[1])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
+
+wire keydown;
+
+Debounce deb0(
+	.i_in(KEY[0]),
+	.i_rst_n(KEY[1]),
+	.i_clk(CLOCK_50),
+	.o_neg(keydown)
+);
+
+Reset_Delay reset_delay0(
+	.iCLK(CLOCK_50),
+	.iRST(KEY[1]),
+	.oRST_0(DLY_RST_0),
+	.oRST_1(DLY_RST_1),
+	.oRST_2(DLY_RST_2),
+	.oRST_3(DLY_RST_3),
+	.oRST_4(DLY_RST_4)
+);
+
+// pll
+sdram_pll pll_0(
+	.inclk0(CLOCK_50),
+	.c0(sdram_ctrl_clk),
+	.c1(DRAM_CLK),
+	.c2(D5M_XCLKIN), //25M
+	.c3(VGA_CLK_in),     	//25M 
+	.c4()     			//40M
+);
 
 // SDRAM Controller
 SDRAM_control	sdram_ctrl_0	(	
@@ -233,7 +239,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD1_MAX_ADDR(23'd16384*(iter_cnt+1)), 				// Read Max Address
 	.RD1_LENGTH(8'd128),									// Read Burst Length
 	.RD1_LOAD(!DLY_RST_0),     							// Read FIFO Clear
-	.RD1_CLK(VGA_CLK),      							// Read FIFO Clock
+	.RD1_CLK(~VGA_CLK_in),      							// Read FIFO Clock
 	// FIFO Read Side 2: from Memory Transfer
 	.RD2_DATA(SDRAM_to_SRAM_data),     					// Data Output
 	.RD2(SRAM_Read),          							// Read Request
@@ -241,7 +247,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_MAX_ADDR(23'd16384), 							// Read Max Address
 	.RD2_LENGTH(8'd128),									// Read Burst Length
 	.RD2_LOAD(!DLY_RST_0 || DSP_start),     				// Read FIFO Clear
-	.RD2_CLK(CLOCK_50),      							// Read FIFO Clock
+	.RD2_CLK(~CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
 	.SA(DRAM_ADDR),
 	.BA(DRAM_BA),
@@ -258,7 +264,7 @@ SDRAM_control	sdram_ctrl_0	(
 Camera_I2C_config  camera_i2c_0 (
 	.iCLK(CLOCK_50),
 	.iRST_N(DLY_RST_2),
-	.iZOOM_MODE_SW(1'b0),
+	.iZOOM_MODE_SW(SW[0]),
 	.iEXPOSURE_ADJ(1'b1),
 	.iEXPOSURE_DEC_p(1'b0),
 	// I2C Side
@@ -267,12 +273,12 @@ Camera_I2C_config  camera_i2c_0 (
 );
 
 Camera_capture  camera_capture_0 (
-	.iDATA(D5M_D),
-	.iFVAL(D5M_FVAL),
-	.iLVAL(D5M_LVAL),
-	.iSTART(KEY[1] | keydown),
+	.iDATA(rCCD_DATA),
+	.iFVAL(rCCD_FVAL),
+	.iLVAL(rCCD_LVAL),
+	.iSTART(auto_start),
 	.iEND(1'b0),
-	.iCLK(D5M_PIXLCLK),
+	.iCLK(~D5M_PIXLCLK),
 	.iRST(DLY_RST_2),
 	.oDATA(Camera_raw_data),
 	.oX_Cnt(raw_X),
@@ -317,8 +323,8 @@ VGA	vga_0	(	//	Host Side
 );
 
 // tmp, for testing
-always_ff @(posedge CLOCK_50 or negedge KEY[1]) begin
-	if (!KEY[1]) begin
+always_ff @(posedge CLOCK_50 or negedge DLY_RST_2) begin
+	if (!DLY_RST_2) begin
 		iter_cnt <= 10'd0;
 		DSP_start_d <= 1'b0;
 		DSP_start <= 1'b0;
@@ -329,6 +335,14 @@ always_ff @(posedge CLOCK_50 or negedge KEY[1]) begin
 		DSP_start <= keydown;
 	end
 end
+
+always@(posedge D5M_PIXLCLK)
+begin
+	rCCD_DATA	<=	D5M_D;
+	rCCD_LVAL	<=	D5M_LVAL;
+	rCCD_FVAL	<=	D5M_FVAL;
+end
+
 
 assign HEX0 = '1;
 assign HEX1 = '1;

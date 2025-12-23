@@ -51,10 +51,15 @@ parameter	V_TOTAL	=	V_FRONT+V_SYNC+V_BACK+V_ACT;
 // Image Parameter
 parameter	IMG_H	=	128;
 parameter	IMG_V	=	128;
-parameter   H_MAR   =   (H_ACT - IMG_H)/2;
-parameter   V_MAR   =   (V_ACT - IMG_V)/2;
+// parameter   H_MAR   =   (H_ACT - IMG_H)/2;
+// parameter   V_MAR   =   (V_ACT - IMG_V)/2;
+parameter   H_MAR   =   (H_ACT - 2*IMG_H)/2;
+parameter   V_MAR   =   (V_ACT - 2*IMG_V)/2;
 ////////////////////////////////////////////////////////////
-
+logic [2*IMG_H-1:0][9:0] h_back_up_r[0:2], h_back_up_w[0:2]; // RGB back up
+logic [9:0] iRed_final;
+logic [9:0] iGreen_final;
+logic [9:0] iBlue_final;
 assign	oVGA_SYNC	=	1'b1;			//	This pin is unused.
 assign	oVGA_BLANK	=	~((H_Cont<H_BLANK)||(V_Cont<V_BLANK));
 assign	oVGA_CLOCK	=	~iCLK;
@@ -71,13 +76,50 @@ assign	oVGA_B		=	(o_request == 1'b1) ? iBlue 	: 10'b0;
 // assign	oVGA_G		=	(oVGA_BLANK == 1'b1) ? 10'b0100000000 	: 10'b0;
 // assign	oVGA_B		=	(oVGA_BLANK == 1'b1) ? 10'b1100000000 	: 10'b0;
 
-assign	oAddress	=	Current_Y*H_ACT+Current_X;
-assign	oRequest	=	((H_Cont>=H_BLANK+H_MAR-1 && H_Cont<=H_BLANK+H_MAR+IMG_H-2) && (V_Cont>=V_BLANK+V_MAR && V_Cont<=V_BLANK+V_MAR+IMG_V-1));
+always_comb begin
+	for (int i = 0; i < 3; i++) begin
+		for (int j = 0; j < 2*IMG_H; j++) begin
+			h_back_up_w[i][j] = h_back_up_r[i][j];
+		end
+	end
+	if(o_request) begin
+		iRed_final   = iRed;
+		iGreen_final = iGreen;
+		iBlue_final  = iBlue;
+		// iRed_final   = 10'b1000000000;
+		// iGreen_final = 10'b0100000000;
+		// iBlue_final  = 10'b0010000000;
+		
+		h_back_up_w[0][H_Cont-H_BLANK-H_MAR] = iRed;
+		h_back_up_w[1][H_Cont-H_BLANK-H_MAR] = iGreen;
+		h_back_up_w[2][H_Cont-H_BLANK-H_MAR] = iBlue;
 
-assign	Current_X	=	(H_Cont>=H_BLANK)	?	H_Cont-H_BLANK	:	11'h0	;
-assign	Current_Y	=	(V_Cont>=V_BLANK)	?	V_Cont-V_BLANK	:	11'h0	;
-assign	oVGA_HS		=	hs;
-assign	oVGA_VS		=	vs;
+		h_back_up_w[0][H_Cont-H_BLANK-H_MAR+1] = iRed;
+		h_back_up_w[1][H_Cont-H_BLANK-H_MAR+1] = iGreen;
+		h_back_up_w[2][H_Cont-H_BLANK-H_MAR+1] = iBlue;
+	end
+	else begin
+		iRed_final   = h_back_up_r[0][H_Cont-H_BLANK-H_MAR];
+		iGreen_final = h_back_up_r[1][H_Cont-H_BLANK-H_MAR];
+		iBlue_final  = h_back_up_r[2][H_Cont-H_BLANK-H_MAR];
+	end
+end
+
+always_comb begin
+	if(H_Cont==H_TOTAL-1)
+		h_flag_nxt = 1'b1;
+	else if((H_Cont>=H_BLANK+H_MAR-1) && (H_Cont<=H_BLANK+H_MAR+2*IMG_H-2))
+		h_flag_nxt = ~h_flag;
+	else
+		h_flag_nxt = h_flag;
+	
+	if (V_Cont==V_TOTAL-1)
+		v_flag_nxt = 1'b1;
+	else if((H_Cont==H_TOTAL-1) && (V_Cont>=V_BLANK+V_MAR) && (V_Cont<=V_BLANK+V_MAR+2*IMG_V-1))
+		v_flag_nxt = ~v_flag;
+	else
+		v_flag_nxt = v_flag;
+end
 
 //	Horizontal Generator: Refer to the pixel clock
 always_comb begin

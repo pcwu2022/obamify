@@ -56,6 +56,9 @@ always_comb begin
             r_data_w = buf_r[iX_Cnt + 1];
             g_data_w = buf_r[iX_Cnt];
             b_data_w = iData[11:4];
+            // r_data_w = r_data_r;
+            // g_data_w = iData[11:4];
+            // b_data_w = buf_r[iX_Cnt];
         end
         else begin // even pixel, output
             dval_w = 1'b1;
@@ -64,6 +67,9 @@ always_comb begin
             r_data_w = r_data_r;
             g_data_w = ((g_data_r + iData[11:4]) >> 1);
             b_data_w = b_data_r;
+            // r_data_w = iData[11:4];
+            // g_data_w = (g_data_r + buf_r[iX_Cnt]) >> 1;
+            // b_data_w = b_data_r;
         end
     end
     else begin
