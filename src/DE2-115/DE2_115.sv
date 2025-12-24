@@ -184,7 +184,13 @@ logic [2:0] state_r, state_w;
 logic DSP_START_0, DSP_START_1, DSP_START_2, DSP_START_3, DSP_START_4;
 // ============== signal ===================
 logic vga_done;
-logic o_classifier_start, o_classifier_done;
+logic classifier_start		, classifier_done;
+logic camera_start			, camera_end;
+logic obamify_start			, obamify_finished;
+logic obamify_epoch_start	, obamify_epoch_finished;
+logic memory_start			, memory_done;
+// SRAM ctrl & obamify
+logic sram_addr, i_sramdata, o_sramdata, sram_we; 
 assign VGA_R 		= vga_r10[9:2];
 assign VGA_G 		= vga_g10[9:2];
 assign VGA_B 		= vga_b10[9:2];
@@ -209,17 +215,17 @@ Top top1(
 	.i_key_2(keydown2),
 
 	.i_vga_done(vga_done),
-	.i_classifier_done(),
-	.i_obamify_finished(),
-	.i_obamify_epoch_finished(),
-	.i_memory_done(),
+	.i_classifier_done(classifier_done),
+	.i_obamify_finished(obamify_finished),
+	.i_obamify_epoch_finished(obamify_epoch_finished),
+	.i_memory_done(memory_done),
 
-	.o_camera_start(),
-	.o_camera_end(),
-	.o_classifier_start(),
-	.o_obamify_start(),
-	.o_obamify_epoch_start(),
-	.o_memory_start(),
+	.o_camera_start(camera_start),
+	.o_camera_end(camera_end),
+	.o_classifier_start(classifier_start),
+	.o_obamify_start(obamify_start),
+	.o_obamify_epoch_start(obamify_epoch_start),
+	.o_memory_start(memory_start),
 	.o_state()
 );
 
@@ -331,10 +337,10 @@ SRAM_control	sram_ctrl_0	(
     .o_cl_data(cl_SRAM_data),
     // Obamify side
     .i_ob_ce(),
-    .i_ob_we(),
-    .i_ob_addr(),
-    .i_ob_data(),
-    .o_ob_data(),
+    .i_ob_we(sram_we),
+    .i_ob_addr(sram_addr),
+    .i_ob_data(o_sramdata),
+    .o_ob_data(i_sramdata),
     // SRAM interface
     .SRAM_DQ(SRAM_DQ),
     .SRAM_ADDR(SRAM_ADDR),
@@ -363,9 +369,9 @@ Memory_transfer	memory_transfer_0	(
 	.o_SDRAM_write(SRAM_to_SDRAM_valid),
 	.o_SDRAM_data(SRAM_to_SDRAM_data),
 	// Control signals
-	.i_SRAM_to_SDRAM_valid(1'b0),
+	.i_SRAM_to_SDRAM_valid(memory_start),//.i_SRAM_to_SDRAM_valid(1'b0),
 	.i_SDRAM_to_SRAM_valid(DSP_START_3 && !DSP_START_4),
-	.o_done(mt_done)
+	.o_done(memory_done)//.o_done(mt_done)
 );
 
 // Camera Modules
@@ -384,8 +390,8 @@ Camera_capture  camera_capture_0 (
 	.iDATA(rCCD_DATA),
 	.iFVAL(rCCD_FVAL),
 	.iLVAL(rCCD_LVAL),
-	.iSTART(auto_start),
-	.iEND(keydown1),
+	.iSTART(camera_start),//.iSTART(auto_start),
+	.iEND(camera_end),//.iEND(keydown1),
 	.iCLK(~D5M_PIXLCLK),
 	.iRST(DLY_RST_2),
 	.oDATA(Camera_raw_data),
@@ -414,12 +420,35 @@ Camera_raw2RGB  camera_raw2RGB_0 (
 Classifier classifier_0 (
 	.i_clk(CLOCK_50),
 	.i_rst_n(DLY_RST_0),
-	.i_start(mt_done),
+	.i_start(classifier_start),//.i_start(mt_done),
 	.i_SRAM_data(cl_SRAM_data),
 	.o_SRAM_addr(cl_SRAM_addr),
 	.o_SRAM_enable(cl_SRAM_ce),
 	.o_result(cl_result),
-	.o_done(cl_done)
+	.o_done(classifier_done)//.o_done(cl_done)
+);
+
+Obamify obamify0(
+	.i_clk(CLOCK_50),
+    .i_rst_n(KEY[0]),
+
+    // Init Controls (Given along with i_start)
+    .target_image_index(cl_result),
+
+    // Global Controls (i_start -> N epochs -> o_finished)
+    .i_start(obamify_start),
+    .o_finished(obamify_finished),
+    // Epoch Controls (i_epoch_start -> M iterations -> o_epoch_finished -> (VGA) -> Repeat)
+    .i_epoch_start(obamify_epoch_start),
+    .o_epoch_finished(obamify_epoch_finished),
+    .o_current_epoch(),
+
+    // SRAM Controls
+    .o_sram_addr(sram_addr),
+    .i_sram_data(i_sramdata),
+    .o_sram_data(o_sramdata),
+    .o_sram_we(sram_we)       // Write enable for SRAM
+
 );
 
 // VGA Module
@@ -439,7 +468,6 @@ VGA	vga_0	(	//	Host Side
 	.oVGA_SYNC(VGA_SYNC_N),
 	.oVGA_BLANK(VGA_BLANK_N),
 	.oVGA_CLOCK(VGA_CLK),
-	.o_done(),
 	//	Control Signal
 	.iCLK(VGA_CLK_in),
 	.iRST_N(DLY_RST_2)
@@ -468,7 +496,7 @@ always_ff @(posedge CLOCK_50 or negedge DLY_RST_2) begin
 	else begin
 		iter_cnt_r <= iter_cnt_w;
 		DSP_start_d <= DSP_start;
-		DSP_start <= keydown0;
+		DSP_start <= KEY[0];
 		state_r <= state_w;
 	end
 end

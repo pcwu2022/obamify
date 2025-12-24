@@ -1200,32 +1200,6 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[26] -
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[17] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
-set_global_assignment -name SYSTEMVERILOG_FILE src/Classifier.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Memory_transfer.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/SRAM_control.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Reset_delay.sv
-set_global_assignment -name SYSTEMVERILOG_FILE "src/DE2-115/SevenHexDecoder.sv"
-set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_WR_FIFO.sv
-set_global_assignment -name QIP_FILE src/SDRAM_WR_FIFO.qip
-set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_RD_FIFO.sv
-set_global_assignment -name QIP_FILE src/SDRAM_RD_FIFO.qip
-set_global_assignment -name SYSTEMVERILOG_FILE src/sdram_pll.sv
-set_global_assignment -name QIP_FILE src/sdram_pll.qip
-set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_datapath.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_control.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_command_interface.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_command.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_raw2RGB.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_I2C_controller.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_I2C_config.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_GPIO_wrapper.sv
-set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_capture.sv
-set_global_assignment -name SDC_FILE "src/DE2-115/DE2_115.sdc"
-set_global_assignment -name SYSTEMVERILOG_FILE "src/DE2-115/Debounce.sv"
-set_global_assignment -name SYSTEMVERILOG_FILE "src/DE2-115/DE2_115.sv"
-set_global_assignment -name SYSTEMVERILOG_FILE src/vga.sv
-set_global_assignment -name SIGNALTAP_FILE output_files/stp2.stp
-set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[0] -to "Classifier:classifier_0|IMG1_sad_r[0]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[1] -to "Classifier:classifier_0|IMG1_sad_r[10]" -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_trigger_in[2] -to "Classifier:classifier_0|IMG1_sad_r[11]" -section_id auto_signaltap_0
@@ -4387,5 +4361,35 @@ set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_INVERSION_MASK_LE
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[13] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
-set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
+set_global_assignment -name SYSTEMVERILOG_FILE src/Top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Random_number_21_bit.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Obamify.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Loss_pixel.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Classifier.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Memory_transfer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/SRAM_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Reset_delay.sv
+set_global_assignment -name SYSTEMVERILOG_FILE "src/DE2-115/SevenHexDecoder.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_WR_FIFO.sv
+set_global_assignment -name QIP_FILE src/SDRAM_WR_FIFO.qip
+set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_RD_FIFO.sv
+set_global_assignment -name QIP_FILE src/SDRAM_RD_FIFO.qip
+set_global_assignment -name SYSTEMVERILOG_FILE src/sdram_pll.sv
+set_global_assignment -name QIP_FILE src/sdram_pll.qip
+set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_datapath.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_command_interface.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/SDRAM_command.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_raw2RGB.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_I2C_controller.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_I2C_config.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_GPIO_wrapper.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/Camera_capture.sv
+set_global_assignment -name SDC_FILE "src/DE2-115/DE2_115.sdc"
+set_global_assignment -name SYSTEMVERILOG_FILE "src/DE2-115/Debounce.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "src/DE2-115/DE2_115.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE src/vga.sv
+set_global_assignment -name SIGNALTAP_FILE output_files/stp2.stp
+set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp

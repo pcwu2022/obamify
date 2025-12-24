@@ -139,12 +139,14 @@ end
 //	Vertical Generator: Refer to the horizontal sync
 always_comb begin
 	if (hs_nxt == 1'b1 && hs == 1'b0) begin
-		if(V_Cont<V_TOTAL-1)
+		if(V_Cont<V_TOTAL-1) begin
 			V_Cont_nxt	=	V_Cont+1'b1;
 			o_done_nxt  =   1'b0;
-		else
+		end
+		else begin
 			V_Cont_nxt	=	0;
 			o_done_nxt  =   1'b1;
+		end
 		//	Vertical Sync
 		if(V_Cont==V_FRONT-1)	begin		//	Front porch end
 			vs_nxt	=	1'b0;
