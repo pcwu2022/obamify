@@ -1,17 +1,19 @@
 `timescale 1ns/100ps
 `define CYCLE       20  // 50MHz
 `define HCYCLE      (`CYCLE/2)
-`define MAX_CYCLE   5000
+`define MAX_CYCLE   200
 
 module tb_Top ();
   logic rst_n, clk;
   logic key1, key2;
-  logic vga_done, 
+  logic vga_done;
   logic camera_start, camera_end;
   logic classifier_start, classifier_done;
   logic obamify_epoch_start, obamify_epoch_finished;
   logic memory_start;
   logic obamify_start, obamify_finished;
+  logic [4:0] counter;
+  logic [2:0] state;
   parameter N = 5; 
             
   Top top0(
@@ -29,7 +31,8 @@ module tb_Top ();
     .o_classifier_start(classifier_start),
     .o_obamify_start(obamify_start),
     .o_obamify_epoch_start(obamify_epoch_start),
-    .o_memory_start(memory_start)
+    .o_memory_start(memory_start),
+    .o_state(state)
   );
 
   always begin
@@ -39,19 +42,30 @@ module tb_Top ();
 
   initial begin
     clk = 1'b0;
-    $fsdbDumpfile("vga.fsdb");
-    $fsdbDumpvars(0, tb_VGA, "+mda");
+    $fsdbDumpfile("top.fsdb");
+    $fsdbDumpvars(0, tb_Top, "+mda");
+    counter =  1'b0;
+    // ========== Reset ==========
     rst_n = 1'b1;
     # (1.2 * `CYCLE);
     rst_n = 1'b0;
     # (2.1 * `CYCLE);
     rst_n = 1'b1;
+
+    key1 = 1'b0;
+    key2 = 1'b0;
+    vga_done = 1'b0;
+    classifier_done = 1'b0;
+    obamify_finished = 1'b0;
+    obamify_epoch_finished = 1'b0;
+
+
     // ========== Test Sequence ==========
     # (3 * `CYCLE);
     key1 = 1'b1;
     # (1 * `CYCLE);
     key1 = 1'b0;
-
+    
     # (3 * `CYCLE);
     key2 = 1'b1;
     # (1 * `CYCLE);
@@ -62,50 +76,102 @@ module tb_Top ();
     # (1 * `CYCLE);
     key1 = 1'b0;
 
-    test_classifier_done(classifier_start, classifier_done);
-    
-    test_obamify_finished(obamify_start, obamify_epoch_start, obamify_finished, obamify_epoch_finished);
+    # (3 * `CYCLE);
+    key1 = 1'b1;
+    # (1 * `CYCLE);
+    key1 = 1'b0;
 
-    # (`CYCLE * `MAX_CYCLE);
+    // test_classifier_done(classifier_start, classifier_done);
+    wait (classifier_start == 1'b1);
+    # (5 * `CYCLE);
+    classifier_done = 1'b1;
+    # (1 * `CYCLE);
+    classifier_done = 1'b0;
+    
+    wait (obamify_start === 1'b1);
+    while(state != 3'b110) begin
+      
+      integer i;
+      wait (obamify_epoch_start === 1'b1);
+      # (10 * `CYCLE);
+      obamify_epoch_finished = 1'b1;
+      if (counter == N) begin
+        obamify_finished = 1'b1;
+      end
+      # (1 * `CYCLE);
+      obamify_epoch_finished = 1'b0;
+      if (counter == N) begin
+        obamify_finished = 1'b0;
+      end
+
+      wait (memory_start === 1'b1);
+      # (10 * `CYCLE);
+      vga_done = 1'b1;
+      # (1 * `CYCLE);
+      vga_done = 1'b0;
+      
+      counter = counter + 1'b1;
+    end
+
+    counter = 1'b0;
+    # (3 * `CYCLE);
+    key2 = 1'b1;
+    # (1 * `CYCLE);
+    key2 = 1'b0;
+  end
+
+  initial begin
+    #(`CYCLE * `MAX_CYCLE);
     $finish;
   end
 
+// ================== not used 
   task test_classifier_done;
     input start;
     output done;
     begin
-      wait (start == 1);     
-      #(5 * `CYCLE);
+      wait (start === 1'b1);
+      # (5 * `CYCLE);
       done = 1'b1;
+      # (1 * `CYCLE);
+      done = 1'b0;
     end
   endtask
 
   task test_obamify_finished;
     input start;
     input epoch_start;
+    input counter;
     output finished;
     output epoch_finished;
-
     begin
       integer i;
-      wait (start == 1);
-      for (i = 0; i < N; i = i + 1) begin
-        #(10 * `CYCLE);
-
-        epoch_finished = 1'b1;
-        # (1 * `CYCLE);
-        epoch_finished = 1'b0;
-
-        wait (vga_done == 1);
-        #(5 * `CYCLE);
-        
-        epoch_start = 1'b1;
-        #(5 * `CYCLE);
-        epoch_start = 1'b0;
+      wait (start === 1'b1);
+      wait (epoch_start === 1'b1);
+      # (10 * `CYCLE);
+      epoch_finished = 1'b1;
+      if (counter === N) begin
+        finished = 1'b1;
       end
       finished = 1'b1;
       # (1 * `CYCLE);
+      epoch_finished = 1'b0;
+      if (counter === N) begin
+        finished = 1'b1;
+      end
       finished = 1'b0;
+    end
+  endtask
+
+  task test_memory_done;
+    input memory_start;
+    output vga_done;
+    begin
+      wait (memory_start === 1'b1);
+      # (10 * `CYCLE);
+      vga_done = 1'b1;
+      # (1 * `CYCLE);
+      vga_done = 1'b0;
     end
   endtask
 
