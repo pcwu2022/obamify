@@ -20,6 +20,18 @@ def main():
     out_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
 
     total_bytes = 0
+
+    def swap_word_bytes(data):
+        # Swap every 2 bytes (16-bit word)
+        swapped = bytearray()
+        for i in range(0, len(data), 2):
+            if i+1 < len(data):
+                swapped.append(data[i+1])
+                swapped.append(data[i])
+            else:
+                swapped.append(data[i])
+        return bytes(swapped)
+
     with open(out_path, "wb") as f:
         for i in range(NUM_IMAGES):
             name = f"target_{i}.png"
@@ -33,12 +45,14 @@ def main():
                     f"Image {name} is {img.size}, expected {SIZE}. Please resize first."
                 )
 
-            # Iterate pixels row-major and write R,G,B,0 per pixel, but reorder for SDRAM: [b2, b3, b0, b1]
+            # Collect pixel data for this image
+            pixel_bytes = bytearray()
             for r, g, b in img.getdata():
-                orig = [r, g, b, 0]
-                reordered = [orig[2], orig[3], orig[0], orig[1]]  # [B, 0, R, G]
-                f.write(bytes(reordered))
-                total_bytes += 4
+                pixel_bytes.extend((r, g, b, 0))
+            # Swap every 2 bytes (16-bit word)
+            swapped = swap_word_bytes(pixel_bytes)
+            f.write(swapped)
+            total_bytes += len(swapped)
 
     expected = 4 * SIZE[0] * SIZE[1] * NUM_IMAGES
     print(f"Wrote {total_bytes} bytes to {out_path} (expected {expected}).")

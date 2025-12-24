@@ -4,26 +4,26 @@
 # Total bytes: 327680 / 8 = 40960 bytes
 
 
-# Original pattern: FF FF FF 00 00 00 00 00 (8 bytes)
-pattern = [0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00]
+# Original pattern: FF FF FF 00 00 00 00 00
+pattern = bytes([0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00])
 total_bytes = 5 * 2**16 // 8
 
-def reorder_bytes(data):
-    # Reorder every 4 bytes: [b0, b1, b2, b3] -> [b2, b3, b0, b1]
-    out = bytearray()
-    for i in range(0, len(data), 4):
-        group = data[i:i+4]
-        if len(group) < 4:
-            out.extend(group)  # leave as is if not enough bytes
+def swap_word_bytes(data):
+    # Swap every 2 bytes (16-bit word)
+    swapped = bytearray()
+    for i in range(0, len(data), 2):
+        if i+1 < len(data):
+            swapped.append(data[i+1])
+            swapped.append(data[i])
         else:
-            out.extend([group[2], group[3], group[0], group[1]])
-    return out
+            swapped.append(data[i])
+    return bytes(swapped)
 
 with open("output/pattern.bin", "wb") as f:
     repeats = total_bytes // len(pattern)
     remainder = total_bytes % len(pattern)
     full_pattern = pattern * repeats + pattern[:remainder]
-    reordered = reorder_bytes(full_pattern)
-    f.write(reordered)
+    swapped_pattern = swap_word_bytes(full_pattern)
+    f.write(swapped_pattern)
 
-print(f"Generated output/pattern.bin with {total_bytes} bytes (reordered for SDRAM word order).")
+print(f"Generated output/pattern.bin with {total_bytes} bytes (word bytes swapped).")

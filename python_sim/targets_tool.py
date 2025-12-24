@@ -29,6 +29,16 @@ def generate_bin(input_dir=INPUT_DIR, output_path=None):
     if output_path is None:
         output_path = os.path.join(OUTPUT_DIR, DEFAULT_BIN_FILE)
 
+    def swap_word_bytes(data):
+        swapped = bytearray()
+        for i in range(0, len(data), 2):
+            if i+1 < len(data):
+                swapped.append(data[i+1])
+                swapped.append(data[i])
+            else:
+                swapped.append(data[i])
+        return bytes(swapped)
+
     total_bytes = 0
     with open(output_path, "wb") as f:
         for i in range(NUM_IMAGES):
@@ -43,12 +53,12 @@ def generate_bin(input_dir=INPUT_DIR, output_path=None):
                     f"Image {name} is {img.size}, expected {SIZE}. Please resize first."
                 )
 
-            # Iterate pixels row-major and write R,G,B,0 per pixel, but reorder for SDRAM: [b2, b3, b0, b1]
+            pixel_bytes = bytearray()
             for r, g, b in img.getdata():
-                orig = [r, g, b, 0]
-                reordered = [orig[2], orig[3], orig[0], orig[1]]  # [B, 0, R, G]
-                f.write(bytes(reordered))
-                total_bytes += 4
+                pixel_bytes.extend((r, g, b, 0))
+            swapped = swap_word_bytes(pixel_bytes)
+            f.write(swapped)
+            total_bytes += len(swapped)
 
     expected = 4 * SIZE[0] * SIZE[1] * NUM_IMAGES
     print(f"Generated: {output_path}")
@@ -82,8 +92,22 @@ def print_hex(filepath, output_path=None, bytes_per_line=16):
 
 def bin_to_image(filepath, width=None, height=None, output_path=None):
     """Convert binary file to image (format: RR GG BB 00 per pixel)."""
+    def unswap_word_bytes(data):
+        # Reverse the swap: swap every 2 bytes back
+        unswapped = bytearray()
+        for i in range(0, len(data), 2):
+            if i+1 < len(data):
+                unswapped.append(data[i+1])
+                unswapped.append(data[i])
+            else:
+                unswapped.append(data[i])
+        return bytes(unswapped)
+
     with open(filepath, 'rb') as f:
         data = f.read()
+
+    # Unswap bytes to get original order
+    data = unswap_word_bytes(data)
 
     num_pixels = len(data) // 4
     print(f"File size: {len(data)} bytes")
@@ -109,19 +133,11 @@ def bin_to_image(filepath, width=None, height=None, output_path=None):
 
     for i in range(min(num_pixels, width * height)):
         offset = i * 4
-        # The file is stored as [b2, b3, b0, b1], so reconstruct original order [b0, b1, b2, b3]
-        if offset + 3 < len(data):
-            b2 = data[offset]
-            b3 = data[offset + 1]
-            b0 = data[offset + 2]
-            b1 = data[offset + 3]
-            # Original: [b0, b1, b2, b3] = [R, G, B, 0x00]
-            r = b0
-            g = b1
-            b = b2
-            # b3 is always 0x00, ignored
-        else:
-            r = g = b = 0
+        r = data[offset]
+        g = data[offset + 1]
+        b = data[offset + 2]
+        # data[offset + 3] is always 0x00, ignored
+
         x = i % width
         y = i // width
         pixels[x, y] = (r, g, b)

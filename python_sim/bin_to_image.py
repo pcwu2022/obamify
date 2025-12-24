@@ -46,19 +46,11 @@ def bin_to_image(filepath, width=None, height=None, output_path=None):
     
     for i in range(min(num_pixels, width * height)):
         offset = i * 4
-        # The file is stored as [b2, b3, b0, b1], so reconstruct original order [b0, b1, b2, b3]
-        if offset + 3 < len(data):
-            b2 = data[offset]
-            b3 = data[offset + 1]
-            b0 = data[offset + 2]
-            b1 = data[offset + 3]
-            # Original: [b0, b1, b2, b3] = [R, G, B, 0x00]
-            r = b0
-            g = b1
-            b = b2
-            # b3 is always 0x00, ignored
-        else:
-            r = g = b = 0
+        r = data[offset]
+        g = data[offset + 1]
+        b = data[offset + 2]
+        # data[offset + 3] is always 0x00, ignored
+        
         x = i % width
         y = i // width
         pixels[x, y] = (r, g, b)
