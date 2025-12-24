@@ -197,20 +197,42 @@ assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 
 assign auto_start = ((KEY[1])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
 
-wire keydown0, keydown1;
+wire keydown1, keydown2;
 
-Debounce deb0(
-	.i_in(KEY[0]),
-	.i_rst_n(KEY[1]),
+Top top1(
 	.i_clk(CLOCK_50),
-	.o_neg(keydown0)
+	.i_rst_n(KEY[0]),
+
+	.i_key_1(keydown1),
+	.i_key_2(keydown2),
+
+	.i_vga_done(),
+	.i_classifier_done(),
+	.i_obamify_finished(),
+	.i_obamify_epoch_finished(),
+	.i_memory_done(),
+
+	.o_camera_start(),
+	.o_camera_end(),
+	.o_classifier_start(),
+	.o_obamify_start(),
+	.o_obamify_epoch_start(),
+	.o_memory_start(),
+	.o_state()
 );
 
 Debounce deb1(
-	.i_in(KEY[2]),
-	.i_rst_n(KEY[1]),
+	.i_in(KEY[1]),
+	.i_rst_n(KEY[0]),
 	.i_clk(CLOCK_50),
 	.o_neg(keydown1)
+);
+
+Debounce deb2(
+	.i_in(KEY[2]),
+	.i_rst_n(KEY[0]),
+	.i_clk(CLOCK_50),
+	.o_neg(keydown2)
 );
 
 Reset_Delay reset_delay0(
