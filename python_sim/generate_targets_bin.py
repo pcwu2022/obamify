@@ -33,9 +33,11 @@ def main():
                     f"Image {name} is {img.size}, expected {SIZE}. Please resize first."
                 )
 
-            # Iterate pixels row-major and write R,G,B,0 per pixel
+            # Iterate pixels row-major and write R,G,B,0 per pixel, but reorder for SDRAM: [b2, b3, b0, b1]
             for r, g, b in img.getdata():
-                f.write(bytes((r, g, b, 0)))
+                orig = [r, g, b, 0]
+                reordered = [orig[2], orig[3], orig[0], orig[1]]  # [B, 0, R, G]
+                f.write(bytes(reordered))
                 total_bytes += 4
 
     expected = 4 * SIZE[0] * SIZE[1] * NUM_IMAGES
