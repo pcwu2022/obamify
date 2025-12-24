@@ -1,4 +1,4 @@
-module o_random_number_21_bit (
+module Random_number_21_bit (
     input           i_clk,
     input           i_rst_n,
     output  [20:0]   o_random_number
