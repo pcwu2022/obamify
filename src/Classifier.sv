@@ -37,10 +37,10 @@ localparam S_IMG5     = 4'd6;
 localparam S_COMP     = 4'd7;
 localparam S_DONE     = 4'd8;
 
-assign o_SRAM_addr   = addr_r;
 assign o_SRAM_enable = SRAM_enable_r;
 assign o_result      = result_r;
-assign o_done        = done_r;
+// assign o_done        = done_r;
+assign o_done = (state_r == S_DONE) ? 1'b1 : 1'b0;
 
 assign R_diff = (source_pixel_r[23:16] > i_SRAM_data[15:8]) ? (source_pixel_r[23:16] - i_SRAM_data[15:8]) : (i_SRAM_data[15:8] - source_pixel_r[23:16]);
 assign G_diff = (source_pixel_r[15:8]  > i_SRAM_data[7:0])  ? (source_pixel_r[15:8]  - i_SRAM_data[7:0])  : (i_SRAM_data[7:0]  - source_pixel_r[15:8]);

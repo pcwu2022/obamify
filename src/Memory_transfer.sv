@@ -43,7 +43,7 @@ localparam S_SDRAM_to_SRAM  = 3'd2;
 localparam S_SRAM_to_SDRAM  = 3'd3;
 localparam S_DONE           = 3'd4;
 
-localparam SRAM_BASE_ADDR   = 20'h5000;
+localparam SRAM_BASE_ADDR   = 20'h28000;
 
 assign o_SRAM_addr   = SRAM_addr_r;
 assign o_SRAM_enable = SRAM_enable_r;
