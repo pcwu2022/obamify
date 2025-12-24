@@ -207,7 +207,7 @@ always_comb begin
             IMG3_sad_w = IMG3_sad_r;
             IMG4_sad_w = IMG4_sad_r;
         end
-        S_SRC: begin
+        S_IDLE: begin
             IMG1_sad_w = 24'd0;
             IMG2_sad_w = 24'd0;
             IMG3_sad_w = 24'd0;

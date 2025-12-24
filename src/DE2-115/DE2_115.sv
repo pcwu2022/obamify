@@ -182,7 +182,9 @@ logic [2:0] cl_result;
 logic cl_done;
 logic [2:0] state_r, state_w;
 logic DSP_START_0, DSP_START_1, DSP_START_2, DSP_START_3, DSP_START_4;
-
+// ============== signal ===================
+logic vga_done;
+logic o_classifier_start, o_classifier_done;
 assign VGA_R 		= vga_r10[9:2];
 assign VGA_G 		= vga_g10[9:2];
 assign VGA_B 		= vga_b10[9:2];
@@ -197,7 +199,7 @@ assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 
 assign auto_start = ((KEY[1])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
 
-wire keydown1, keydown2;
+logic keydown1, keydown2;
 
 Top top1(
 	.i_clk(CLOCK_50),
@@ -206,7 +208,7 @@ Top top1(
 	.i_key_1(keydown1),
 	.i_key_2(keydown2),
 
-	.i_vga_done(),
+	.i_vga_done(vga_done),
 	.i_classifier_done(),
 	.i_obamify_finished(),
 	.i_obamify_epoch_finished(),
@@ -425,7 +427,9 @@ VGA	vga_0	(	//	Host Side
 	.iRed(mRed),
 	.iGreen(mGreen),
 	.iBlue(mBlue),
+	.oAddress(), //not used
 	.oRequest(VGA_Read),
+	.o_done(vga_done),
 	//	VGA Side
 	.oVGA_R(vga_r10),
 	.oVGA_G(vga_g10),
@@ -435,6 +439,7 @@ VGA	vga_0	(	//	Host Side
 	.oVGA_SYNC(VGA_SYNC_N),
 	.oVGA_BLANK(VGA_BLANK_N),
 	.oVGA_CLOCK(VGA_CLK),
+	.o_done(),
 	//	Control Signal
 	.iCLK(VGA_CLK_in),
 	.iRST_N(DLY_RST_2)
