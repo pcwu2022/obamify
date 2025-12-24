@@ -1,27 +1,25 @@
 module Memory_transfer(
     input               i_clk,
     input               i_rst_n,
-    // Flash interface
-    input               i_FL_data_valid,
-    input        [7:0]  i_FL_data,
-    output logic        o_FL_read,
-    output logic [22:0] o_FL_addr,
     // SRAM interface
     input        [15:0] i_SRAM_data,
-    output logic [19:0] o_SRAM_addr,
-    output logic        o_SRAM_enable,
-    output logic        o_SRAM_write,
-    output logic [15:0] o_SRAM_data,
+    output       [19:0] o_SRAM_addr,
+    output              o_SRAM_enable,
+    output              o_SRAM_write,
+    output       [15:0] o_SRAM_data,
+    // tmp
+    input        [9:0]  i_iter_cnt,
+    output       [19:0] o_SRAM_base_addr,
+    output       [19:0] o_SRAM_MAX_addr,
     // SDRAM interface
     input        [31:0] i_SDRAM_data,
-    output logic        o_SDRAM_read,
-    output logic        o_SDRAM_write,
-    output logic [31:0] o_SDRAM_data,
+    output              o_SDRAM_read,
+    output              o_SDRAM_write,
+    output       [31:0] o_SDRAM_data,
     // Control signals
-    input               i_start,
     input               i_SRAM_to_SDRAM_valid,
     input               i_SDRAM_to_SRAM_valid,
-    output logic        o_done
+    output              o_done
 );
 
 logic [19:0] SRAM_addr_r, SRAM_addr_w;
@@ -32,8 +30,6 @@ logic [15:0] SRAM_data_r, SRAM_data_w;
 logic SDRAM_read_r, SDRAM_read_w;
 logic SDRAM_write_r, SDRAM_write_w;
 logic [31:0] SDRAM_data_r, SDRAM_data_w;
-
-logic done_r, done_w;
 
 logic [2:0] state_r, state_w;
 logic [6:0] x_cnt_r, x_cnt_w;
@@ -48,6 +44,15 @@ localparam S_SRAM_to_SDRAM  = 3'd3;
 localparam S_DONE           = 3'd4;
 
 localparam SRAM_BASE_ADDR   = 20'h5000;
+
+assign o_SRAM_addr   = SRAM_addr_r;
+assign o_SRAM_enable = SRAM_enable_r;
+assign o_SRAM_write  = SRAM_write_r;
+assign o_SRAM_data   = SRAM_data_r;
+assign o_SDRAM_read  = SDRAM_read_r;
+assign o_SDRAM_write = SDRAM_write_r;
+assign o_SDRAM_data  = SDRAM_data_r;
+assign o_done = (state_r == S_DONE) ? 1'b1 : 1'b0;
 
 // FSM
 always_comb begin
@@ -99,7 +104,8 @@ always_comb begin
         end
         S_SRAM_to_SDRAM: begin
             SRAM_data_w = 16'd0;
-            SRAM_addr_w = SRAM_BASE_ADDR + {y_cnt_r, x_cnt_r, counter_r};
+            // SRAM_addr_w = SRAM_BASE_ADDR + {y_cnt_r, x_cnt_r, counter_r};
+            SRAM_addr_w = {i_iter_cnt[4:0], y_cnt_w, x_cnt_w, counter_w};
             SRAM_write_w = 1'b0;
             SRAM_enable_w = 1'b1;
         end
@@ -134,7 +140,9 @@ always_comb begin
             SDRAM_read_w = 1'b0;
             if (counter_r == 1'b1) begin
                 SDRAM_write_w = 1'b1;
-                SDRAM_data_w = {8'd0, buffer_r[15:0], SRAM_data_r[15:8]};
+                SDRAM_data_w = {8'd0, buffer_r[15:0], i_SRAM_data[15:8]};
+                // SDRAM_data_w = {8'd0, buffer_r[7:0], buffer_r[15:8], i_SRAM_data[7:0]};
+                // SDRAM_data_w = {8'd0, 8'h80, 8'h40, 8'hA0};
             end
             else begin
                 SDRAM_write_w = 1'b0;
@@ -174,6 +182,64 @@ always_comb begin
     endcase
 end
 
+// tmp
+logic [19:0] o_SRAM_base_addr_w, o_SRAM_MAX_addr_w;
+always_comb begin
+    if (x_cnt_r == 7'd127 && y_cnt_r == 7'd127 && counter_r == 1'b1) begin
+        o_SRAM_base_addr_w = {i_iter_cnt[4:0], 15'd0};
+        o_SRAM_MAX_addr_w = {i_iter_cnt[4:0], y_cnt_r, x_cnt_r, 1'b1};
+    end
+    else begin
+        o_SRAM_base_addr_w = o_SRAM_base_addr;
+        o_SRAM_MAX_addr_w = o_SRAM_MAX_addr;
+    end
+end
+
+always_ff @(posedge i_clk or negedge i_rst_n) begin
+    if (!i_rst_n) begin
+        o_SRAM_base_addr <= 20'd0;
+        o_SRAM_MAX_addr <= 20'd0;
+    end
+    else begin
+        o_SRAM_base_addr <= o_SRAM_base_addr_w;
+        o_SRAM_MAX_addr <= o_SRAM_MAX_addr_w;
+    end
+end
+
+// x_cnt, y_cnt, counter
+always_comb begin
+    case (state_r)
+        S_SDRAM_to_SRAM, S_SRAM_to_SDRAM: begin
+            if (counter_r == 1'b0) begin
+                counter_w = 1'b1;
+                x_cnt_w = x_cnt_r;
+                y_cnt_w = y_cnt_r;
+            end
+            else begin
+                counter_w = 1'b0;
+                if (x_cnt_r == 7'd127) begin
+                    x_cnt_w = 7'd0;
+                    if (y_cnt_r == 7'd127) begin
+                        y_cnt_w = 7'd0;
+                    end
+                    else begin
+                        y_cnt_w = y_cnt_r + 7'd1;
+                    end
+                end
+                else begin
+                    x_cnt_w = x_cnt_r + 7'd1;
+                    y_cnt_w = y_cnt_r;
+                end
+            end
+        end
+        default: begin
+            counter_w = 1'b0;
+            x_cnt_w = 7'd0;
+            y_cnt_w = 7'd0;
+        end
+    endcase
+end
+
 // sequential logic
 always_ff @(posedge i_clk or negedge i_rst_n) begin
     if (!i_rst_n) begin
@@ -189,7 +255,6 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
         SDRAM_read_r <= 1'b0;
         SDRAM_write_r <= 1'b0;
         SDRAM_data_r <= 32'd0;
-        done_r <= 1'b0;
     end
     else begin
         state_r <= state_w;
@@ -204,7 +269,6 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
         SDRAM_read_r <= SDRAM_read_w;
         SDRAM_write_r <= SDRAM_write_w;
         SDRAM_data_r <= SDRAM_data_w;
-        done_r <= done_w;
     end
 end
 

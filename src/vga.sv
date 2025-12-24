@@ -56,7 +56,7 @@ parameter	IMG_V	=	128;
 parameter   H_MAR   =   (H_ACT - 2*IMG_H)/2;
 parameter   V_MAR   =   (V_ACT - 2*IMG_V)/2;
 ////////////////////////////////////////////////////////////
-logic [2*IMG_H-1:0][9:0] h_back_up_r[0:2], h_back_up_w[0:2]; // RGB back up
+logic [9:0] h_back_up_r[0:2][0:2*IMG_H-1], h_back_up_w[0:2][0:2*IMG_H-1]; // RGB back up
 logic [9:0] iRed_final;
 logic [9:0] iGreen_final;
 logic [9:0] iBlue_final;
