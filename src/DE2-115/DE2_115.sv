@@ -528,8 +528,8 @@ begin
 end
 
 
-assign HEX0 = '1;
-assign HEX1 = '1;
+// assign HEX0 = '1;
+// assign HEX1 = '1;
 assign HEX2 = '1;
 assign HEX3 = '1;
 assign HEX4 = '1;
