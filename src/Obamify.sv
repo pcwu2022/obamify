@@ -164,9 +164,7 @@ assign o_epoch_finished = epoch_finished_r;
 assign o_current_epoch = epoch_r;
 assign o_sram_addr = sram_addr_r;
 assign o_sram_data = sram_data_out_r;
-// assign o_sram_data = 16'h88;
 assign o_sram_we = sram_we_r;
-// assign o_sram_we = 1'b0;
 
 // === COMBINATIONAL LOGIC === //
 
