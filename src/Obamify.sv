@@ -163,9 +163,10 @@ assign o_finished = finished_r;
 assign o_epoch_finished = epoch_finished_r;
 assign o_current_epoch = epoch_r;
 assign o_sram_addr = sram_addr_r;
-// assign o_sram_data = sram_data_out_r;
-assign o_sram_data = 16'h88;
+assign o_sram_data = sram_data_out_r;
+// assign o_sram_data = 16'h88;
 assign o_sram_we = sram_we_r;
+// assign o_sram_we = 1'b0;
 
 // === COMBINATIONAL LOGIC === //
 
@@ -255,13 +256,13 @@ assign move_valid_new = (k_calc_new >= 0) && (k_calc_new < W) && (l_calc_new >= 
 
 // Address calculations: pixel address = base + 2(jW + i) (each pixel is 2 words)
 // Source pixel 1 at (i_idx_r, j_idx_r)
-assign pixel_1_addr = SOURCE_IMAGE_ADDR + ((({13'b0, j_idx_r} << W_bits) + ({13'b0, i_idx_r}) << 1));
+assign pixel_1_addr = SOURCE_IMAGE_ADDR + ((({13'b0, j_idx_r} << W_bits) + ({13'b0, i_idx_r})) << 1);
 // Source pixel 2 at (k_idx_r, l_idx_r)
-assign pixel_2_addr = SOURCE_IMAGE_ADDR + ((({13'b0, l_idx_r} << W_bits) + ({13'b0, k_idx_r}) << 1));
+assign pixel_2_addr = SOURCE_IMAGE_ADDR + ((({13'b0, l_idx_r} << W_bits) + ({13'b0, k_idx_r})) << 1);
 // Target pixel 1 at (i_idx_r, j_idx_r)
-assign target_pixel_1_addr = target_base_addr_r + ((({13'b0, j_idx_r} << W_bits) + ({13'b0, i_idx_r}) << 1));
+assign target_pixel_1_addr = target_base_addr_r + ((({13'b0, j_idx_r} << W_bits) + ({13'b0, i_idx_r})) << 1);
 // Target pixel 2 at (k_idx_r, l_idx_r)
-assign target_pixel_2_addr = target_base_addr_r + ((({13'b0, l_idx_r} << W_bits) + ({13'b0, k_idx_r}) << 1));
+assign target_pixel_2_addr = target_base_addr_r + ((({13'b0, l_idx_r} << W_bits) + ({13'b0, k_idx_r})) << 1);
 
 // Loss calculations
 assign loss_old = {1'b0, source_pixel_1_r[7:0]} + {1'b0, source_pixel_2_r[7:0]};
