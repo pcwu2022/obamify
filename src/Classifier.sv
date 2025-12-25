@@ -214,6 +214,20 @@ always_comb begin
             IMG4_sad_w = 24'd0;
             IMG5_sad_w = 24'd0;
         end
+        S_SRC: begin
+            IMG1_sad_w = IMG1_sad_r;
+            IMG2_sad_w = IMG2_sad_r;
+            IMG3_sad_w = IMG3_sad_r;
+            IMG4_sad_w = IMG4_sad_r;
+            IMG5_sad_w = IMG5_sad_r;
+        end
+        S_DONE: begin
+            IMG1_sad_w = IMG1_sad_r;
+            IMG2_sad_w = IMG2_sad_r;
+            IMG3_sad_w = IMG3_sad_r;
+            IMG4_sad_w = IMG4_sad_r;
+            IMG5_sad_w = IMG5_sad_r;
+        end
         default: begin
             IMG1_sad_w = IMG1_sad_r;
             IMG2_sad_w = IMG2_sad_r;

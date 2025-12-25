@@ -314,6 +314,16 @@ always_ff @(posedge CLK or negedge RESET_N) begin
         rRD1_LENGTH <= RD1_LENGTH;
         rRD2_LENGTH <= RD2_LENGTH;
     end else begin
+        // Maintain MAX_ADDR and LENGTH values (they only change on reset)
+        rWR1_MAX_ADDR <= WR1_MAX_ADDR;
+        rWR2_MAX_ADDR <= WR2_MAX_ADDR;
+        rRD1_MAX_ADDR <= RD1_MAX_ADDR;
+        rRD2_MAX_ADDR <= RD2_MAX_ADDR;
+        rWR1_LENGTH   <= WR1_LENGTH;
+        rWR2_LENGTH   <= WR2_LENGTH;
+        rRD1_LENGTH   <= RD1_LENGTH;
+        rRD2_LENGTH   <= RD2_LENGTH;
+
         // Write Side 1
         if (mWR_DONE && WR_MASK[0]) begin
             if (rWR1_ADDR < rWR1_MAX_ADDR - rWR1_LENGTH)
