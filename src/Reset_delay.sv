@@ -20,7 +20,7 @@ always_ff @(posedge iCLK or negedge iRST) begin
         oRST_4 <= 1'b0;
     end
     else begin
-        if (Cont != 32'h01FFFFFF)
+        if (Cont != 32'h02FFFFFF)
             Cont <= Cont + 1'b1;
         if (Cont >= 32'h001FFFFF)
             oRST_0 <= 1'b1;
@@ -28,9 +28,9 @@ always_ff @(posedge iCLK or negedge iRST) begin
             oRST_1 <= 1'b1;
         if (Cont >= 32'h011FFFFF)
             oRST_2 <= 1'b1;
-        if (Cont >= 32'h016FFFFF)
+        if (Cont >= 32'h026FFFFF)
             oRST_3 <= 1'b1;
-        if (Cont >= 32'h01FFFFFF)
+        if (Cont >= 32'h02FFFFFF)
             oRST_4 <= 1'b1;
     end
 end
