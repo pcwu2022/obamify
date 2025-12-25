@@ -37,8 +37,9 @@ logic [1:0] state_r, state_w;
 assign o_sram_addr = addr_r;
 assign o_sram_data = data_r;
 assign o_sram_we = we_r;
-assign o_current_epoch = counter_r;
-assign o_finished = finished_r;
+assign o_current_epoch = {6'b0, counter_r};
+assign o_epoch_finished = finished_r;
+assign o_finished = 1'b0; // Not used in this implementation
 
 always_comb begin
     if (i_start) begin
@@ -63,18 +64,21 @@ always_comb begin
             addr_w = 20'b0;
             data_w = 16'b0;
             we_w = 1'b0;
+            finished_w = 1'b0;
         end
         OBMF: begin
             state_w = IDLE;
             addr_w = SOURCE_IMAGE_ADDR + ({10'b0, counter_r} << 1);
-            data_w = 16'h1010;
+            data_w = 16'h8080;
             we_w = 1'b1;
+            finished_w = 1'b1;
         end
         default: begin
             state_w = IDLE;
             addr_w = 20'b0;
             data_w = 16'b0;
             we_w = 1'b0;
+            finished_w = 1'b0;
         end
     endcase 
 end

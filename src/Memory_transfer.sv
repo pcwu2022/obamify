@@ -113,6 +113,8 @@ always_comb begin
         S_SRAM_to_SDRAM: begin
             SRAM_data_w = 16'd0;
             SRAM_addr_w = SRAM_BASE_ADDR + {y_cnt_w, x_cnt_w, counter_w};
+            // SRAM_addr_w = {y_cnt_w, x_cnt_w, counter_w};
+            // SRAM_addr_w = {i_iter_cnt[4:0], y_cnt_w, x_cnt_w, counter_w};
             SRAM_write_w = 1'b0;
             SRAM_enable_w = 1'b1;
         end
