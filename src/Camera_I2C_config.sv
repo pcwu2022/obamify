@@ -182,8 +182,8 @@ always_comb begin
 	6'd4	:	LUT_DATA	<=	24'h060019;				//	V_Blanking	
 	6'd5	:	LUT_DATA	<=	24'h0A8000;				//	change latch
 	6'd6	:	LUT_DATA	<=	24'h2B0013;				//	Green 1 Gain
-	6'd7	:	LUT_DATA	<=	24'h2D019C;				//	Blue Gain
-	6'd8	:	LUT_DATA	<=	24'h2C009A;				//	Red Gain
+	6'd7	:	LUT_DATA	<=	24'h2C009A;				//	Blue Gain
+	6'd8	:	LUT_DATA	<=	24'h2D019C;				//	Red Gain
 	6'd9	:	LUT_DATA	<=	24'h2E0013;				//	Green 2 Gain
 	6'd10	:	LUT_DATA	<=	24'h100051;				//	set up PLL power on
 `ifdef VGA_640x480p60	
