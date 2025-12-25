@@ -200,11 +200,11 @@ assign VGA_B 		= vga_b10[9:2];
 assign D5M_TRIGGER 	= 1'b1;
 assign D5M_RESET_N 	= DLY_RST_1;
 
-// assign mRed 		= {SDRAM_to_VGA_data[23:16], 2'b00};
-assign mRed 		= {SDRAM_to_VGA_data[7:0], 2'b00};
+assign mRed 		= {SDRAM_to_VGA_data[23:16], 2'b00};
+// assign mRed 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 assign mGreen 		= {SDRAM_to_VGA_data[15:8], 2'b00};
-// assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
-assign mBlue 		= {SDRAM_to_VGA_data[23:16], 2'b00};
+assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
+// assign mBlue 		= {SDRAM_to_VGA_data[23:16], 2'b00};
 
 // assign auto_start = ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
 assign auto_start = ( ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4)) || ((KEY[2])&&(CAM_START_3)&&(!CAM_START_4)))? 1'b1:1'b0;
