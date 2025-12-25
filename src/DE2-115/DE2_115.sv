@@ -185,10 +185,11 @@ logic DSP_START_0, DSP_START_1, DSP_START_2, DSP_START_3, DSP_START_4;
 // ============== signal ===================
 logic vga_done;
 logic classifier_start		, classifier_done;
-logic camera_start			, camera_end;
-logic obamify_start			, obamify_finished;
+logic camera_start				, camera_end;
+logic obamify_start				, obamify_finished;
 logic obamify_epoch_start	, obamify_epoch_finished;
-logic memory_start			, memory_done;
+logic memory_start				, memory_done;
+logic [2:0] top_state;
 // SRAM ctrl & obamify
 logic sram_addr, i_sramdata, o_sramdata, sram_we; 
 assign VGA_R 		= vga_r10[9:2];
@@ -206,6 +207,12 @@ assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 assign auto_start = ((KEY[1])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
 
 logic keydown1, keydown2;
+
+SevenHexDecoder seven_dec0(
+	.i_hex(top_state),
+	.o_seven_ten(HEX1),
+	.o_seven_one(HEX0)
+);
 
 Top top1(
 	.i_clk(CLOCK_50),
@@ -226,7 +233,7 @@ Top top1(
 	.o_obamify_start(obamify_start),
 	.o_obamify_epoch_start(obamify_epoch_start),
 	.o_memory_start(memory_start),
-	.o_state()
+	.o_state(top_state)
 );
 
 Debounce deb1(
@@ -245,7 +252,7 @@ Debounce deb2(
 
 Reset_Delay reset_delay0(
 	.iCLK(CLOCK_50),
-	.iRST(KEY[1]),
+	.iRST(KEY[0]),
 	.oRST_0(DLY_RST_0),
 	.oRST_1(DLY_RST_1),
 	.oRST_2(DLY_RST_2),
@@ -275,7 +282,7 @@ sdram_pll pll_0(
 
 // SDRAM Controller
 SDRAM_control	sdram_ctrl_0	(	
-	.RESET_N(KEY[1]),
+	.RESET_N(KEY[0]),
 	.CLK(sdram_ctrl_clk),
 	// FIFO Write Side 1: from Camera raw2RGB
 	// .WR1_DATA({8'd0, camera_Red, camera_Green, camera_Blue}), // Data Input
@@ -371,7 +378,7 @@ Memory_transfer	memory_transfer_0	(
 	// Control signals
 	.i_SRAM_to_SDRAM_valid(memory_start),//.i_SRAM_to_SDRAM_valid(1'b0),
 	.i_SDRAM_to_SRAM_valid(DSP_START_3 && !DSP_START_4),
-	.o_done(memory_done)//.o_done(mt_done)
+	.o_done(memory_done)//.o_done(mt_done) //to be fixed
 );
 
 // Camera Modules
@@ -430,25 +437,24 @@ Classifier classifier_0 (
 
 Obamify obamify0(
 	.i_clk(CLOCK_50),
-    .i_rst_n(KEY[0]),
+	.i_rst_n(KEY[0]),
 
-    // Init Controls (Given along with i_start)
-    .target_image_index(cl_result),
+	// Init Controls (Given along with i_start)
+	.target_image_index(cl_result),
 
-    // Global Controls (i_start -> N epochs -> o_finished)
-    .i_start(obamify_start),
-    .o_finished(obamify_finished),
-    // Epoch Controls (i_epoch_start -> M iterations -> o_epoch_finished -> (VGA) -> Repeat)
-    .i_epoch_start(obamify_epoch_start),
-    .o_epoch_finished(obamify_epoch_finished),
-    .o_current_epoch(),
+	// Global Controls (i_start -> N epochs -> o_finished)
+	.i_start(obamify_start),
+	.o_finished(obamify_finished),
+	// Epoch Controls (i_epoch_start -> M iterations -> o_epoch_finished -> (VGA) -> Repeat)
+	.i_epoch_start(obamify_epoch_start),
+	.o_epoch_finished(obamify_epoch_finished),
+	.o_current_epoch(),
 
-    // SRAM Controls
-    .o_sram_addr(sram_addr),
-    .i_sram_data(i_sramdata),
-    .o_sram_data(o_sramdata),
-    .o_sram_we(sram_we)       // Write enable for SRAM
-
+	// SRAM Controls
+	.o_sram_addr(sram_addr),
+	.i_sram_data(i_sramdata),
+	.o_sram_data(o_sramdata),
+	.o_sram_we(sram_we)       // Write enable for SRAM
 );
 
 // VGA Module
