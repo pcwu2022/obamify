@@ -26,15 +26,16 @@ module SRAM_control (
     output              SRAM_WE_N
 );
 
-localparam S_CL = 3'd1;
-localparam S_MT = 3'd2;
-localparam S_OB = 3'd3;
+localparam S_FX = 3'd2;
+localparam S_CL = 3'd3;
+localparam S_MT = 3'd5;
+localparam S_OB = 3'd4;
 
 logic sram_en;
 logic [15:0] sram_dq_out;
 
 assign sram_en = (i_mt_we || i_ob_we);
-assign sram_dq_out = (i_state == S_MT) ? i_mt_data : i_ob_data;
+assign sram_dq_out = (i_state == S_MT || i_state == S_FX) ? i_mt_data : i_ob_data;
 
 assign SRAM_DQ = (sram_en) ? (sram_dq_out) : 16'hzzzz;
 assign SRAM_OE_N = 1'b0;
@@ -44,7 +45,7 @@ assign SRAM_WE_N =  sram_en ? 1'b0 : 1'b1;
 
 always_comb begin
     case (i_state)
-        S_MT: begin
+        S_FX, S_MT: begin
             SRAM_CE_N = (i_mt_ce || i_mt_we) ? 1'b0 : 1'b1;
             SRAM_ADDR = (i_mt_ce || i_mt_we) ? i_mt_addr : 20'd0;
             o_mt_data = (!i_mt_we && i_mt_ce) ? SRAM_DQ : 16'd0;

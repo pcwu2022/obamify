@@ -190,6 +190,7 @@ logic camera_start				, camera_end;
 logic obamify_start				, obamify_finished;
 logic obamify_epoch_start	, obamify_epoch_finished;
 logic memory_start				, memory_done;
+logic inv_memory_start;
 logic [2:0] top_state;
 // SRAM ctrl & obamify
 logic sram_addr, i_sramdata, o_sramdata, sram_we; 
@@ -234,6 +235,7 @@ Top top1(
 	.o_obamify_start(obamify_start),
 	.o_obamify_epoch_start(obamify_epoch_start),
 	.o_memory_start(memory_start),
+	.o_inv_memory_start(inv_memory_start),
 	.o_state(top_state)
 );
 
@@ -263,7 +265,7 @@ Reset_Delay reset_delay0(
 
 Reset_Delay reset_delay1(
 	.iCLK(CLOCK_50),
-	.iRST(!classifier_start),
+	.iRST(!inv_memory_start),
 	.oRST_0(DSP_START_0),
 	.oRST_1(DSP_START_1),
 	.oRST_2(DSP_START_2),
@@ -326,7 +328,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_ADDR(23'd0),     								// Read Start Address
 	.RD2_MAX_ADDR(23'd16384), 							// Read Max Address
 	.RD2_LENGTH(8'd128),									// Read Burst Length
-	.RD2_LOAD(!DLY_RST_0 || KEY[0]),     				// Read FIFO Clear
+	.RD2_LOAD(!DLY_RST_0 || !DSP_START_0),     				// Read FIFO Clear
 	.RD2_CLK(~CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
 	.SA(DRAM_ADDR),
@@ -438,7 +440,7 @@ Camera_raw2RGB  camera_raw2RGB_0 (
 Classifier classifier_0 (
 	.i_clk(CLOCK_50),
 	.i_rst_n(DLY_RST_0),
-	.i_start(memory_done),//.i_start(mt_done),
+	.i_start(classifier_start),//.i_start(mt_done),
 	.i_SRAM_data(cl_SRAM_data),
 	.o_SRAM_addr(cl_SRAM_addr),
 	.o_SRAM_enable(cl_SRAM_ce),
@@ -491,32 +493,32 @@ VGA	vga_0	(	//	Host Side
 );
 
 // tmp, for testing
-always_comb begin
-	// if (mt_done) iter_cnt_w = iter_cnt_r + 10'd1;
-	// else iter_cnt_w = iter_cnt_r;
-	iter_cnt_w = iter_cnt_r;
-	if (mt_done) begin
-		state_w = 3'd1;
-	end
-	else begin
-		state_w = state_r;
-	end
-end
+// always_comb begin
+// 	// if (mt_done) iter_cnt_w = iter_cnt_r + 10'd1;
+// 	// else iter_cnt_w = iter_cnt_r;
+// 	iter_cnt_w = iter_cnt_r;
+// 	if (mt_done) begin
+// 		state_w = 3'd1;
+// 	end
+// 	else begin
+// 		state_w = state_r;
+// 	end
+// end
 
-always_ff @(posedge CLOCK_50 or negedge DLY_RST_2) begin
-	if (!DLY_RST_2) begin
-		iter_cnt_r <= 10'd0;
-		DSP_start_d <= 1'b0;
-		DSP_start <= 1'b0;
-		state_r <= 3'd2;
-	end
-	else begin
-		iter_cnt_r <= iter_cnt_w;
-		DSP_start_d <= DSP_start;
-		DSP_start <= KEY[0];
-		state_r <= state_w;
-	end
-end
+// always_ff @(posedge CLOCK_50 or negedge DLY_RST_2) begin
+// 	if (!DLY_RST_2) begin
+// 		iter_cnt_r <= 10'd0;
+// 		DSP_start_d <= 1'b0;
+// 		DSP_start <= 1'b0;
+// 		state_r <= 3'd2;
+// 	end
+// 	else begin
+// 		iter_cnt_r <= iter_cnt_w;
+// 		DSP_start_d <= DSP_start;
+// 		DSP_start <= KEY[0];
+// 		state_r <= state_w;
+// 	end
+// end
 
 always@(posedge D5M_PIXLCLK)
 begin

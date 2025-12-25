@@ -15,6 +15,7 @@ module Top(
   output o_classifier_start,
   output o_obamify_start,
   output o_obamify_epoch_start,
+  output o_inv_memory_start,
   output o_memory_start,
   output [2:0] o_state
 );
@@ -25,6 +26,7 @@ module Top(
   logic o_obamify_start_nxt       , o_obamify_start_reg;
   logic o_obamify_epoch_start_nxt , o_obamify_epoch_start_reg;
   logic o_memory_start_nxt        , o_memory_start_reg;
+  logic o_inv_memory_start_nxt    , o_inv_memory_start_reg;
   logic dsp_flag_nxt              , dsp_flag_reg;
 
   assign o_camera_start        = o_camera_start_reg;
@@ -32,6 +34,7 @@ module Top(
   assign o_classifier_start    = o_classifier_start_reg;
   assign o_obamify_start       = o_obamify_start_reg;
   assign o_obamify_epoch_start = o_obamify_epoch_start_reg;
+  assign o_inv_memory_start    = o_inv_memory_start_reg;
   assign o_memory_start        = o_memory_start_reg;
   assign o_state               = state;
   
@@ -49,10 +52,12 @@ module Top(
         if (i_key_1) begin
           state_nxt = FIX;
           o_camera_end_nxt        = 1'b1;
+          o_inv_memory_start_nxt  = 1'b1;
         end
         else begin
           state_nxt = state;
           o_camera_end_nxt        = 1'b0;
+          o_inv_memory_start_nxt  = 1'b0;
         end
         o_camera_start_nxt        = 1'b1;
         o_memory_start_nxt        = 1'b0;
@@ -74,6 +79,7 @@ module Top(
           state_nxt = state;
           o_classifier_start_nxt    = 1'b0;
         end
+        o_inv_memory_start_nxt      = 1'b0;
         o_camera_start_nxt          = 1'b0;
         o_camera_end_nxt            = 1'b1;
         o_memory_start_nxt          = 1'b0;
@@ -92,6 +98,7 @@ module Top(
           o_obamify_start_nxt       = 1'b0;
           o_obamify_epoch_start_nxt = 1'b0; 
         end
+        o_inv_memory_start_nxt      = 1'b0;
         o_camera_start_nxt          = 1'b0;
         o_camera_end_nxt            = 1'b1;
         o_classifier_start_nxt      = 1'b0;
@@ -126,7 +133,7 @@ module Top(
             dsp_flag_nxt              = 1'b0;
           end
         endcase
-
+        o_inv_memory_start_nxt   = 1'b0;
         o_camera_start_nxt       = 1'b0;
         o_camera_end_nxt         = 1'b1;
         o_obamify_start_nxt = 1'b0;
@@ -148,6 +155,7 @@ module Top(
           state_nxt = state;
           o_obamify_epoch_start_nxt = 1'b0;
         end
+        o_inv_memory_start_nxt    = 1'b0;
         o_camera_start_nxt        = 1'b0;
         o_camera_end_nxt          = 1'b1;
         o_memory_start_nxt        = 1'b0;
@@ -158,6 +166,7 @@ module Top(
       FIN: begin
         if (i_key_2) state_nxt = IDLE; //camera start again
         else         state_nxt = state;
+        o_inv_memory_start_nxt    = 1'b0;
         o_camera_start_nxt        = 1'b0;
         o_camera_end_nxt          = 1'b1;
         o_memory_start_nxt        = 1'b0;
@@ -168,6 +177,7 @@ module Top(
       end
       default: begin
         state_nxt = IDLE;
+        o_inv_memory_start_nxt    = 1'b0;
         o_camera_start_nxt        = 1'b1;
         o_camera_end_nxt          = 1'b0;
         o_memory_start_nxt        = o_memory_start_reg;
@@ -182,6 +192,7 @@ module Top(
   always_ff @(posedge i_clk or negedge i_rst_n) begin
     if (!i_rst_n) begin
       state                     <= IDLE;
+      o_inv_memory_start_reg    <= 1'b0;
       o_camera_start_reg        <= 1'b0;
       o_camera_end_reg          <= 1'b0;
       o_classifier_start_reg    <= 1'b0;
@@ -192,6 +203,7 @@ module Top(
     end
     else begin
       state                     <= state_nxt;
+      o_inv_memory_start_reg    <= o_inv_memory_start_nxt;
       o_camera_start_reg        <= o_camera_start_nxt;
       o_camera_end_reg          <= o_camera_end_nxt;
       o_classifier_start_reg    <= o_classifier_start_nxt;
