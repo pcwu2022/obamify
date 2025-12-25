@@ -9,7 +9,6 @@ module Top(
   input i_classifier_done,
   input i_obamify_finished,
   input i_obamify_epoch_finished,
-  input i_memory_done,
 
   output o_camera_start,
   output o_camera_end,

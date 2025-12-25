@@ -182,6 +182,7 @@ logic [2:0] cl_result;
 logic cl_done;
 logic [2:0] state_r, state_w;
 logic DSP_START_0, DSP_START_1, DSP_START_2, DSP_START_3, DSP_START_4;
+logic CAM_START_0, CAM_START_1, CAM_START_2, CAM_START_3, CAM_START_4;
 // ============== signal ===================
 logic vga_done;
 logic classifier_start		, classifier_done;
@@ -204,7 +205,8 @@ assign mGreen 		= {SDRAM_to_VGA_data[15:8], 2'b00};
 assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 // assign mBlue 		= {SDRAM_to_VGA_data[23:16], 2'b00};
 
-assign auto_start = ((KEY[1])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
+// assign auto_start = ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4))? 1'b1:1'b0;
+assign auto_start = ( ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4)) || ((KEY[2])&&(CAM_START_3)&&(!CAM_START_4)))? 1'b1:1'b0;
 
 logic keydown1, keydown2;
 
@@ -225,7 +227,6 @@ Top top1(
 	.i_classifier_done(classifier_done),
 	.i_obamify_finished(obamify_finished),
 	.i_obamify_epoch_finished(obamify_epoch_finished),
-	.i_memory_done(memory_done),
 
 	.o_camera_start(camera_start),
 	.o_camera_end(camera_end),
@@ -262,12 +263,22 @@ Reset_Delay reset_delay0(
 
 Reset_Delay reset_delay1(
 	.iCLK(CLOCK_50),
-	.iRST(!keydown1),
+	.iRST(!classifier_start),
 	.oRST_0(DSP_START_0),
 	.oRST_1(DSP_START_1),
 	.oRST_2(DSP_START_2),
 	.oRST_3(DSP_START_3),
 	.oRST_4(DSP_START_4)
+);
+
+Reset_Delay reset_delay2(
+	.iCLK(CLOCK_50),
+	.iRST(KEY[2]),
+	.oRST_0(CAM_START_0),
+	.oRST_1(CAM_START_1),
+	.oRST_2(CAM_START_2),
+	.oRST_3(CAM_START_3),
+	.oRST_4(CAM_START_4)
 );
 
 // pll
@@ -315,7 +326,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_ADDR(23'd0),     								// Read Start Address
 	.RD2_MAX_ADDR(23'd16384), 							// Read Max Address
 	.RD2_LENGTH(8'd128),									// Read Burst Length
-	.RD2_LOAD(!DLY_RST_0 || keydown1),     				// Read FIFO Clear
+	.RD2_LOAD(!DLY_RST_0 || KEY[0]),     				// Read FIFO Clear
 	.RD2_CLK(~CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
 	.SA(DRAM_ADDR),
@@ -343,7 +354,7 @@ SRAM_control	sram_ctrl_0	(
     .i_cl_addr(cl_SRAM_addr),
     .o_cl_data(cl_SRAM_data),
     // Obamify side
-    .i_ob_ce(),
+    .i_ob_ce(1'b0),
     .i_ob_we(sram_we),
     .i_ob_addr(sram_addr),
     .i_ob_data(o_sramdata),
@@ -427,7 +438,7 @@ Camera_raw2RGB  camera_raw2RGB_0 (
 Classifier classifier_0 (
 	.i_clk(CLOCK_50),
 	.i_rst_n(DLY_RST_0),
-	.i_start(classifier_start),//.i_start(mt_done),
+	.i_start(memory_done),//.i_start(mt_done),
 	.i_SRAM_data(cl_SRAM_data),
 	.o_SRAM_addr(cl_SRAM_addr),
 	.o_SRAM_enable(cl_SRAM_ce),
