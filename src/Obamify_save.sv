@@ -302,7 +302,12 @@ always_comb begin
                 // Initialize for first epoch
                 epoch_w = 16'd0;
                 iteration_w = 16'd0;
-                target_base_addr_w = TARGET_IMAGE_ADDRS[target_image_index];
+                // Clamp target_image_index to valid range [0-4]
+                if (target_image_index < 3'd5) begin
+                    target_base_addr_w = TARGET_IMAGE_ADDRS[target_image_index];
+                end else begin
+                    target_base_addr_w = TARGET_IMAGE_ADDRS[0];  // Default to first image
+                end
                 state_w = S_CALC_INIT;
             end
         end
@@ -335,7 +340,7 @@ always_comb begin
         S_READ_SOURCE_1_LO: begin
             // Capture low 16 bits of source pixel 1 (B[7:0], Loss[7:0])
             // Then set address for the HIGH word of source pixel 1
-            source_pixel_1_w[15:0] = i_sram_data;
+            source_pixel_1_w = {source_pixel_1_r[31:16], i_sram_data};
             sram_addr_w = pixel_1_addr + 20'd1;
             state_w = S_READ_SOURCE_1_HI;
         end
@@ -343,7 +348,7 @@ always_comb begin
         S_READ_SOURCE_1_HI: begin
             // Capture high 16 bits of source pixel 1 (R[7:0], G[7:0])
             // Then set address to the low word of source pixel 2
-            source_pixel_1_w[31:16] = i_sram_data;
+            source_pixel_1_w = {i_sram_data, source_pixel_1_r[15:0]};
             sram_addr_w = pixel_2_addr;
             state_w = S_READ_SOURCE_2_LO;
         end
@@ -351,7 +356,7 @@ always_comb begin
         S_READ_SOURCE_2_LO: begin
             // Capture low 16 bits of source pixel 2
             // Then set address for the HIGH word of source pixel 2
-            source_pixel_2_w[15:0] = i_sram_data;
+            source_pixel_2_w = {source_pixel_2_r[31:16], i_sram_data};
             sram_addr_w = pixel_2_addr + 20'd1;
             state_w = S_READ_SOURCE_2_HI;
         end
@@ -359,7 +364,7 @@ always_comb begin
         S_READ_SOURCE_2_HI: begin
             // Capture high 16 bits of source pixel 2
             // Then set address to the low word of target pixel 1
-            source_pixel_2_w[31:16] = i_sram_data;
+            source_pixel_2_w = {i_sram_data, source_pixel_2_r[15:0]};
             sram_addr_w = target_pixel_1_addr;
             state_w = S_READ_TARGET_1_LO;
         end
@@ -367,7 +372,7 @@ always_comb begin
         S_READ_TARGET_1_LO: begin
             // Capture low 16 bits of target pixel 1
             // Then set address for the HIGH word of target pixel 1
-            target_pixel_1_w[15:0] = i_sram_data;
+            target_pixel_1_w = {target_pixel_1_r[31:16], i_sram_data};
             sram_addr_w = target_pixel_1_addr + 20'd1;
             state_w = S_READ_TARGET_1_HI;
         end
@@ -375,7 +380,7 @@ always_comb begin
         S_READ_TARGET_1_HI: begin
             // Capture high 16 bits of target pixel 1
             // Then set address to the low word of target pixel 2
-            target_pixel_1_w[31:16] = i_sram_data;
+            target_pixel_1_w = {i_sram_data, target_pixel_1_r[15:0]};
             sram_addr_w = target_pixel_2_addr;
             state_w = S_READ_TARGET_2_LO;
         end
@@ -383,7 +388,7 @@ always_comb begin
         S_READ_TARGET_2_LO: begin
             // Capture low 16 bits of target pixel 2
             // Then set address for the HIGH word of target pixel 2
-            target_pixel_2_w[15:0] = i_sram_data;
+            target_pixel_2_w = {target_pixel_2_r[31:16], i_sram_data};
             sram_addr_w = target_pixel_2_addr + 20'd1;
             state_w = S_READ_TARGET_2_HI;
         end
@@ -391,7 +396,7 @@ always_comb begin
         S_READ_TARGET_2_HI: begin
             // Capture high 16 bits of target pixel 2
             // Now all pixel words are captured; compute loss next
-            target_pixel_2_w[31:16] = i_sram_data;
+            target_pixel_2_w = {i_sram_data, target_pixel_2_r[15:0]};
             state_w = S_CALC_LOSS;
         end
 

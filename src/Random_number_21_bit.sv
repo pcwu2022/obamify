@@ -5,14 +5,17 @@ module Random_number_21_bit (
 );
 
     // 32-bit state register for xorshift32 PRNG
-    reg [31:0] state;
-    wire [31:0] next_state;
+    logic [31:0] state;
+    logic [31:0] next_state;
+    logic [31:0] temp1, temp2;
 
     // xorshift32 algorithm
     // x ^= (x << 13)
     // x ^= (x >> 17)
     // x ^= (x << 5)
-    assign next_state = ((state ^ (state << 13)) ^ ((state ^ (state << 13)) >> 17)) ^ (((state ^ (state << 13)) ^ ((state ^ (state << 13)) >> 17)) << 5);
+    assign temp1 = state ^ (state << 13);
+    assign temp2 = temp1 ^ (temp1 >> 17);
+    assign next_state = temp2 ^ (temp2 << 5);
 
     // Output the lower 21 bits of the state
     assign o_random_number = state[20:0];

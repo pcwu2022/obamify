@@ -193,7 +193,9 @@ logic memory_start				, memory_done;
 logic inv_memory_start;
 logic [2:0] top_state;
 // SRAM ctrl & obamify
-logic sram_addr, i_sramdata, o_sramdata, sram_we; 
+logic [19:0] sram_addr;
+logic [15:0] i_sramdata, o_sramdata;
+logic sram_we; 
 assign VGA_R 		= vga_r10[9:2];
 assign VGA_G 		= vga_g10[9:2];
 assign VGA_B 		= vga_b10[9:2];
