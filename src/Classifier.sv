@@ -269,27 +269,27 @@ always_comb begin
     case (state_r)
         S_SRC: begin
             SRAM_enable_w = 1'b1;
-            o_SRAM_addr = {13'd0, y_cnt_r, x_cnt_r, counter_r};
+            o_SRAM_addr = {5'd5, y_cnt_r, x_cnt_r, counter_r};
         end
         S_IMG1: begin
             SRAM_enable_w = 1'b1;
-            o_SRAM_addr = {13'd1, y_cnt_r, x_cnt_r, counter_r};
+            o_SRAM_addr = {5'd0, y_cnt_r, x_cnt_r, counter_r};
         end
         S_IMG2: begin
             SRAM_enable_w = 1'b1;
-            o_SRAM_addr = {13'd2, y_cnt_r, x_cnt_r, counter_r};
+            o_SRAM_addr = {5'd1, y_cnt_r, x_cnt_r, counter_r};
         end
         S_IMG3: begin
             SRAM_enable_w = 1'b1;
-            o_SRAM_addr = {13'd3, y_cnt_r, x_cnt_r, counter_r};
+            o_SRAM_addr = {5'd2, y_cnt_r, x_cnt_r, counter_r};
         end
         S_IMG4: begin
             SRAM_enable_w = 1'b1;
-            o_SRAM_addr = {13'd4, y_cnt_r, x_cnt_r, counter_r};
+            o_SRAM_addr = {5'd3, y_cnt_r, x_cnt_r, counter_r};
         end
         S_IMG5: begin
             SRAM_enable_w = 1'b1;
-            o_SRAM_addr = {13'd5, y_cnt_r, x_cnt_r, counter_r};
+            o_SRAM_addr = {5'd4, y_cnt_r, x_cnt_r, counter_r};
         end
         default: begin
             SRAM_enable_w = 1'b0;
