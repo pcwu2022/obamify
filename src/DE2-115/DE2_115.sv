@@ -371,7 +371,7 @@ SRAM_control	sram_ctrl_0	(
     .i_cl_addr(cl_SRAM_addr),
     .o_cl_data(cl_SRAM_data),
     // Obamify side
-    .i_ob_ce(1'b1),
+    .i_ob_ce(top_state == 3'd4),
     .i_ob_we(sram_we),
     .i_ob_addr(sram_addr),
     .i_ob_data(o_sramdata),
@@ -465,7 +465,7 @@ Classifier classifier_0 (
 
 Obamify obamify0(
 	.i_clk(CLOCK_50),
-	.i_rst_n(KEY[0]),
+	.i_rst_n(DLY_RST_0),
 
 	// Init Controls (Given along with i_start)
 	.target_image_index(cl_result),

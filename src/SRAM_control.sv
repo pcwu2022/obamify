@@ -34,7 +34,10 @@ localparam S_OB = 3'd4;
 logic sram_en;
 logic [15:0] sram_dq_out;
 
-assign sram_en = (i_mt_we || i_ob_we);
+// Only enable write when in the correct state for the active writer
+// This prevents bus contention and glitches
+assign sram_en = ((i_state == S_MT || i_state == S_FX) && i_mt_we) || 
+                 ((i_state == S_OB) && i_ob_we);
 assign sram_dq_out = (i_state == S_MT || i_state == S_FX) ? i_mt_data : i_ob_data;
 
 assign SRAM_DQ = (sram_en) ? (sram_dq_out) : 16'hzzzz;
