@@ -71,7 +71,15 @@ always_comb begin
         S_PREP: begin
             state_w = S_SDRAM_to_SRAM;
         end
-        S_SDRAM_to_SRAM, S_SRAM_to_SDRAM: begin
+        S_SDRAM_to_SRAM: begin
+            if ((x_cnt_r == 7'd127) && (y_cnt_r == 7'd127) && counter_r) begin
+                state_w = S_IDLE;
+            end
+            else begin
+                state_w = state_r;
+            end
+        end
+        S_SRAM_to_SDRAM: begin
             if ((x_cnt_r == 7'd127) && (y_cnt_r == 7'd127) && counter_r) begin
                 state_w = S_DONE;
             end

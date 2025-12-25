@@ -28,17 +28,17 @@ module Obamify (
 localparam W = 128;
 localparam H = 128;
 localparam MAX_LENGTH = 8;
-localparam N = 1024;    // Number of epochs
+localparam N = 480;    // Number of epochs
 localparam M = 1024;    // Number of iterations per epoch
 
 // Addresses (each pixel is 2 words, so multiply by 2 for word address)
-localparam TARGET_IMAGE_ADDR = 20'h50000;
+localparam TARGET_IMAGE_ADDR = 20'h28000;
 localparam logic [19:0] SOURCE_IMAGE_ADDRS [5] = '{
     20'h00000,
+    20'h08000,
     20'h10000,
-    20'h20000,
-    20'h30000,
-    20'h40000
+    20'h18000,
+    20'h20000
 };
 
 // FSM States - expanded to handle 16-bit SRAM for 32-bit pixels
@@ -439,9 +439,17 @@ always_comb begin
 
         S_NEXT_ITER: begin
             if (iteration_r == M - 1) begin
-                // Epoch complete
-                epoch_finished_w = 1'b1;
-                state_w = S_EPOCH_DONE;
+                if (epoch_r == N - 1) begin 
+                    // Epoch complete AND All Epochs complete
+                    epoch_finished_w = 1'b1;
+                    finished_w = 1'b1;
+                    state_w = S_FINISHED;
+                end
+                else begin 
+                    // Epoch complete
+                    epoch_finished_w = 1'b1;
+                    state_w = S_EPOCH_DONE;
+                end
             end else begin
                 // Continue to next iteration
                 iteration_w = iteration_r + 16'd1;
@@ -452,16 +460,10 @@ always_comb begin
         S_EPOCH_DONE: begin
             // Wait for next epoch trigger
             if (i_epoch_start) begin
-                if (epoch_r == N - 1) begin
-                    // All epochs complete
-                    finished_w = 1'b1;
-                    state_w = S_FINISHED;
-                end else begin
-                    // Start next epoch
-                    epoch_w = epoch_r + 16'd1;
-                    iteration_w = 16'd0;
-                    state_w = S_CALC_INIT;
-                end
+                // Start next epoch
+                epoch_w = epoch_r + 16'd1;
+                iteration_w = 16'd0;
+                state_w = S_CALC_INIT;
             end
         end
 

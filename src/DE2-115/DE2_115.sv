@@ -331,7 +331,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD1_ADDR(23'd16384*iter_cnt_r),     					// Read Start Address
 	.RD1_MAX_ADDR(23'd16384*(iter_cnt_r+1)), 				// Read Max Address
 	.RD1_LENGTH(8'd128),									// Read Burst Length
-	.RD1_LOAD(!DLY_RST_0),     							// Read FIFO Clear
+	.RD1_LOAD(!DLY_RST_0 || memory_done),     							// Read FIFO Clear
 	.RD1_CLK(~VGA_CLK_in),      							// Read FIFO Clock
 	// FIFO Read Side 2: from Memory Transfer
 	.RD2_DATA(SDRAM_to_SRAM_data),     					// Data Output
