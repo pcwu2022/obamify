@@ -472,7 +472,7 @@ Obamify obamify0(
 	// Epoch Controls (i_epoch_start -> M iterations -> o_epoch_finished -> (VGA) -> Repeat)
 	.i_epoch_start(obamify_epoch_start),
 	.o_epoch_finished(obamify_epoch_finished),
-	.o_current_epoch(),
+	.o_current_epoch(iter_cnt_r),
 
 	// SRAM Controls
 	.o_sram_addr(sram_addr),
