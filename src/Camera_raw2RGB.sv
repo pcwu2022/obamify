@@ -53,23 +53,23 @@ always_comb begin
             dval_w = 1'b0;
             x_cnt_w = x_cnt_r;
             y_cnt_w = y_cnt_r;
+            r_data_w = iData[11:4];
+            g_data_w = buf_r[iX_Cnt];
+            b_data_w = buf_r[iX_Cnt + 1];
             // r_data_w = buf_r[iX_Cnt + 1];
-            // g_data_w = buf_r[iX_Cnt];
-            // b_data_w = iData[11:4];
-            r_data_w = buf_r[iX_Cnt + 1];
-            g_data_w = iData[11:4];
-            b_data_w = 8'd0;
+            // g_data_w = iData[11:4];
+            // b_data_w = 8'd0;
         end
         else begin // even pixel, output
             dval_w = 1'b1;
             x_cnt_w = {1'b0, iX_Cnt[15:1]};
             y_cnt_w = {1'b0, iY_Cnt[15:1]};
-            // r_data_w = r_data_r;
-            // g_data_w = ((g_data_r + iData[11:4]) >> 1);
-            // b_data_w = b_data_r;
             r_data_w = r_data_r;
-            g_data_w = (g_data_r + buf_r[iX_Cnt - 1]) >> 1;
-            b_data_w = iData[11:4];
+            g_data_w = ((g_data_r + iData[11:4]) >> 1);
+            b_data_w = b_data_r;
+            // r_data_w = r_data_r;
+            // g_data_w = (g_data_r + buf_r[iX_Cnt - 1]) >> 1;
+            // b_data_w = iData[11:4];
         end
     end
     else begin
