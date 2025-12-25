@@ -76,6 +76,8 @@ assign	oVGA_R		=	(in_frame) ? iRed_final 	: 10'b0;
 assign	oVGA_G		=	(in_frame) ? iGreen_final 	: 10'b0;
 assign	oVGA_B		=	(in_frame) ? iBlue_final 	: 10'b0;
 
+
+assign	o_done		=	o_done_r;
 always_comb begin
 	for (int i = 0; i < 3; i++) begin
 		for (int j = 0; j < 2*IMG_H; j++) begin
@@ -186,6 +188,7 @@ begin
 				h_back_up_r[i][j] <= 10'd0;
 			end
 		end
+		o_done_r	<=	1'b0;
 	end
 	else
 	begin
@@ -201,6 +204,7 @@ begin
 				h_back_up_r[i][j] <= h_back_up_w[i][j];
 			end
 		end
+		o_done_r	<=	o_done_nxt;
 	end
 end
 

@@ -181,7 +181,7 @@ logic [15:0] cl_SRAM_data;
 logic [2:0] cl_result;
 logic cl_done;
 logic [2:0] state_r, state_w;
-logic DSP_START_0, DSP_START_1, DSP_START_2, DSP_START_3, DSP_START_4;
+logic DSP_START_0, DSP_START_0_pulse, DSP_START_0_d, DSP_START_1, DSP_START_2, DSP_START_3, DSP_START_4;
 logic CAM_START_0, CAM_START_1, CAM_START_2, CAM_START_3, CAM_START_4;
 // ============== signal ===================
 logic vga_done;
@@ -210,6 +210,17 @@ assign mBlue 		= {SDRAM_to_VGA_data[7:0], 2'b00};
 assign auto_start = ( ((KEY[0])&&(DLY_RST_3)&&(!DLY_RST_4)) || ((KEY[2])&&(CAM_START_3)&&(!CAM_START_4)))? 1'b1:1'b0;
 
 logic keydown1, keydown2;
+
+always @(posedge CLOCK_50 or negedge DLY_RST_0) begin
+	if (!DLY_RST_0) begin
+		DSP_START_0_d <= 1'b1;
+		DSP_START_0_pulse <= 1'b0;
+	end
+	else begin
+		DSP_START_0_d <= DSP_START_0;
+		DSP_START_0_pulse <= ~DSP_START_0 & DSP_START_0_d;
+	end
+end
 
 SevenHexDecoder seven_dec0(
 	.i_hex(top_state),
@@ -328,7 +339,7 @@ SDRAM_control	sdram_ctrl_0	(
 	.RD2_ADDR(23'd0),     								// Read Start Address
 	.RD2_MAX_ADDR(23'd16384), 							// Read Max Address
 	.RD2_LENGTH(8'd128),									// Read Burst Length
-	.RD2_LOAD(!DLY_RST_0 || !DSP_START_0),     				// Read FIFO Clear
+	.RD2_LOAD(!DLY_RST_0 || DSP_START_0_pulse),     				// Read FIFO Clear
 	.RD2_CLK(~CLOCK_50),      							// Read FIFO Clock
 	// SDRAM Side
 	.SA(DRAM_ADDR),
@@ -344,7 +355,7 @@ SDRAM_control	sdram_ctrl_0	(
 
 // SRAM Controller
 SRAM_control	sram_ctrl_0	(
-    .i_state(state_r),
+    .i_state(top_state),
     // Memory transfer side
     .i_mt_ce(mt_SRAM_ce),
     .i_mt_we(mt_SRAM_we),
