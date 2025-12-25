@@ -26,14 +26,14 @@ module Obamify (
 
 // Image dimensions
 localparam W = 128;
-localparam H = 128;
+localparam W_bits = 7;
 localparam MAX_LENGTH = 8;
 localparam N = 480;    // Number of epochs
 localparam M = 1024;    // Number of iterations per epoch
 
 // Addresses (each pixel is 2 words, so multiply by 2 for word address)
-localparam TARGET_IMAGE_ADDR = 20'h28000;
-localparam logic [19:0] SOURCE_IMAGE_ADDRS [5] = '{
+localparam SOURCE_IMAGE_ADDR = 20'h28000;
+localparam logic [19:0] TARGET_IMAGE_ADDRS [5] = '{
     20'h00000,
     20'h08000,
     20'h10000,
@@ -75,7 +75,7 @@ logic   [15:0]  epoch_r, epoch_w;
 logic   [15:0]  iteration_r, iteration_w;
 
 // Source image base address
-logic   [19:0]  source_base_addr_r, source_base_addr_w;
+logic   [19:0]  target_base_addr_r, target_base_addr_w;
 
 // Pixels: r, g, b, loss (8-bit each) = 32 bits
 // Format: [31:24]=R, [23:16]=G, [15:8]=B, [7:0]=Loss
@@ -163,7 +163,8 @@ assign o_finished = finished_r;
 assign o_epoch_finished = epoch_finished_r;
 assign o_current_epoch = epoch_r;
 assign o_sram_addr = sram_addr_r;
-assign o_sram_data = sram_data_out_r;
+// assign o_sram_data = sram_data_out_r;
+assign o_sram_data = 16'h88;
 assign o_sram_we = sram_we_r;
 
 // === COMBINATIONAL LOGIC === //
@@ -172,7 +173,7 @@ assign o_sram_we = sram_we_r;
 // deviation = random_21_bits % MAX_LENGTH (bits 0-2 for 0-7)
 // direction = (random_21_bits >> 5) % 4 (bits 5-6 for 0-3)
 // i = (random_21_bits >> 7) % W (bits 7-13 for 0-127)
-// j = (random_21_bits >> 14) % H (bits 14-20 for 0-127)
+// j = (random_21_bits >> 14) % W (bits 14-20 for 0-127)
 assign deviation = random_number_r[2:0];                    // 3 bits for 0-7
 assign direction = random_number_r[6:5];                    // 2 bits for 0-3
 assign rand_i = random_number_r[13:7];                      // 7 bits for 0-127
@@ -248,19 +249,19 @@ always_comb begin
     endcase
 end
 
-// Check if calculated indices are within bounds [0, W-1] and [0, H-1]
-assign move_valid = (k_calc >= 0) && (k_calc < W) && (l_calc >= 0) && (l_calc < H);
-assign move_valid_new = (k_calc_new >= 0) && (k_calc_new < W) && (l_calc_new >= 0) && (l_calc_new < H);
+// Check if calculated indices are within bounds [0, W-1] and [0, W-1]
+assign move_valid = (k_calc >= 0) && (k_calc < W) && (l_calc >= 0) && (l_calc < W);
+assign move_valid_new = (k_calc_new >= 0) && (k_calc_new < W) && (l_calc_new >= 0) && (l_calc_new < W);
 
-// Address calculations: pixel address = base + (j * W + i) * 2 (each pixel is 2 words)
+// Address calculations: pixel address = base + 2(jW + i) (each pixel is 2 words)
 // Source pixel 1 at (i_idx_r, j_idx_r)
-assign pixel_1_addr = source_base_addr_r + ({13'b0, j_idx_r} * W + {13'b0, i_idx_r}) * 2;
+assign pixel_1_addr = SOURCE_IMAGE_ADDR + ((({13'b0, j_idx_r} << W_bits) + ({13'b0, i_idx_r}) << 1));
 // Source pixel 2 at (k_idx_r, l_idx_r)
-assign pixel_2_addr = source_base_addr_r + ({13'b0, l_idx_r} * W + {13'b0, k_idx_r}) * 2;
+assign pixel_2_addr = SOURCE_IMAGE_ADDR + ((({13'b0, l_idx_r} << W_bits) + ({13'b0, k_idx_r}) << 1));
 // Target pixel 1 at (i_idx_r, j_idx_r)
-assign target_pixel_1_addr = TARGET_IMAGE_ADDR + ({13'b0, j_idx_r} * W + {13'b0, i_idx_r}) * 2;
+assign target_pixel_1_addr = target_base_addr_r + ((({13'b0, j_idx_r} << W_bits) + ({13'b0, i_idx_r}) << 1));
 // Target pixel 2 at (k_idx_r, l_idx_r)
-assign target_pixel_2_addr = TARGET_IMAGE_ADDR + ({13'b0, l_idx_r} * W + {13'b0, k_idx_r}) * 2;
+assign target_pixel_2_addr = target_base_addr_r + ((({13'b0, l_idx_r} << W_bits) + ({13'b0, k_idx_r}) << 1));
 
 // Loss calculations
 assign loss_old = {1'b0, source_pixel_1_r[7:0]} + {1'b0, source_pixel_2_r[7:0]};
@@ -279,7 +280,7 @@ always_comb begin
     state_w = state_r;
     epoch_w = epoch_r;
     iteration_w = iteration_r;
-    source_base_addr_w = source_base_addr_r;
+    target_base_addr_w = target_base_addr_r;
     source_pixel_1_w = source_pixel_1_r;
     source_pixel_2_w = source_pixel_2_r;
     target_pixel_1_w = target_pixel_1_r;
@@ -302,7 +303,7 @@ always_comb begin
                 // Initialize for first epoch
                 epoch_w = 16'd0;
                 iteration_w = 16'd0;
-                source_base_addr_w = SOURCE_IMAGE_ADDRS[target_image_index];
+                target_base_addr_w = TARGET_IMAGE_ADDRS[target_image_index];
                 state_w = S_CALC_INIT;
             end
         end
@@ -321,76 +322,77 @@ always_comb begin
                 state_w = S_NEXT_ITER;
             end else begin
                 // Valid move, set address for source pixel 1
-                sram_addr_w = source_base_addr_r + ({13'b0, rand_j_new} * W + {13'b0, rand_i_new}) * 2;
+                // sram_addr_w = SOURCE_IMAGE_ADDR + ((({13'b0, rand_j_new} << W_bits) + {13'b0, rand_i_new}) << 1);
                 state_w = S_ADDR_SOURCE_1_LO;
             end
         end
 
         S_ADDR_SOURCE_1_LO: begin
-            // Address was set in previous cycle, now wait for data
-            // Set address for high 16 bits
-            sram_addr_w = pixel_1_addr + 20'd1;
+            // Set SRAM address to the low word of source pixel 1
+            sram_addr_w = pixel_1_addr;
             state_w = S_READ_SOURCE_1_LO;
         end
 
         S_READ_SOURCE_1_LO: begin
             // Capture low 16 bits of source pixel 1 (B[7:0], Loss[7:0])
+            // Then set address for the HIGH word of source pixel 1
             source_pixel_1_w[15:0] = i_sram_data;
-            // Set address for source pixel 2 low
-            sram_addr_w = pixel_2_addr;
+            sram_addr_w = pixel_1_addr + 20'd1;
             state_w = S_READ_SOURCE_1_HI;
         end
 
         S_READ_SOURCE_1_HI: begin
             // Capture high 16 bits of source pixel 1 (R[7:0], G[7:0])
+            // Then set address to the low word of source pixel 2
             source_pixel_1_w[31:16] = i_sram_data;
-            // Set address for source pixel 2 high
-            sram_addr_w = pixel_2_addr + 20'd1;
+            sram_addr_w = pixel_2_addr;
             state_w = S_READ_SOURCE_2_LO;
         end
 
         S_READ_SOURCE_2_LO: begin
             // Capture low 16 bits of source pixel 2
+            // Then set address for the HIGH word of source pixel 2
             source_pixel_2_w[15:0] = i_sram_data;
-            // Set address for target pixel 1 low
-            sram_addr_w = target_pixel_1_addr;
+            sram_addr_w = pixel_2_addr + 20'd1;
             state_w = S_READ_SOURCE_2_HI;
         end
 
         S_READ_SOURCE_2_HI: begin
             // Capture high 16 bits of source pixel 2
+            // Then set address to the low word of target pixel 1
             source_pixel_2_w[31:16] = i_sram_data;
-            // Set address for target pixel 1 high
-            sram_addr_w = target_pixel_1_addr + 20'd1;
+            sram_addr_w = target_pixel_1_addr;
             state_w = S_READ_TARGET_1_LO;
         end
 
         S_READ_TARGET_1_LO: begin
             // Capture low 16 bits of target pixel 1
+            // Then set address for the HIGH word of target pixel 1
             target_pixel_1_w[15:0] = i_sram_data;
-            // Set address for target pixel 2 low
-            sram_addr_w = target_pixel_2_addr;
+            sram_addr_w = target_pixel_1_addr + 20'd1;
             state_w = S_READ_TARGET_1_HI;
         end
 
         S_READ_TARGET_1_HI: begin
             // Capture high 16 bits of target pixel 1
+            // Then set address to the low word of target pixel 2
             target_pixel_1_w[31:16] = i_sram_data;
-            // Set address for target pixel 2 high
-            sram_addr_w = target_pixel_2_addr + 20'd1;
+            sram_addr_w = target_pixel_2_addr;
             state_w = S_READ_TARGET_2_LO;
         end
 
         S_READ_TARGET_2_LO: begin
             // Capture low 16 bits of target pixel 2
+            // Then set address for the HIGH word of target pixel 2
             target_pixel_2_w[15:0] = i_sram_data;
+            sram_addr_w = target_pixel_2_addr + 20'd1;
             state_w = S_READ_TARGET_2_HI;
         end
 
         S_READ_TARGET_2_HI: begin
             // Capture high 16 bits of target pixel 2
+            // Now all pixel words are captured; compute loss next
             target_pixel_2_w[31:16] = i_sram_data;
-            // Move to loss calculation
             state_w = S_CALC_LOSS;
         end
 
@@ -409,7 +411,7 @@ always_comb begin
         end
 
         S_WRITE_SOURCE_1_LO: begin
-            // Write high 16 bits of swapped pixel 1
+            // Write HIGH 16 bits of swapped pixel 1 to pixel_1_addr+1
             sram_addr_w = pixel_1_addr + 20'd1;
             sram_data_out_w = swapped_pixel_1[31:16];
             sram_we_w = 1'b1;
@@ -417,7 +419,7 @@ always_comb begin
         end
 
         S_WRITE_SOURCE_1_HI: begin
-            // Write low 16 bits of swapped pixel 2
+            // Write LOW 16 bits of swapped pixel 2 to pixel_2_addr
             sram_addr_w = pixel_2_addr;
             sram_data_out_w = swapped_pixel_2[15:0];
             sram_we_w = 1'b1;
@@ -425,7 +427,7 @@ always_comb begin
         end
 
         S_WRITE_SOURCE_2_LO: begin
-            // Write high 16 bits of swapped pixel 2
+            // Write HIGH 16 bits of swapped pixel 2 to pixel_2_addr+1
             sram_addr_w = pixel_2_addr + 20'd1;
             sram_data_out_w = swapped_pixel_2[31:16];
             sram_we_w = 1'b1;
@@ -484,7 +486,7 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
         state_r <= S_IDLE;
         epoch_r <= 16'd0;
         iteration_r <= 16'd0;
-        source_base_addr_r <= 20'd0;
+        target_base_addr_r <= 20'd0;
         source_pixel_1_r <= 32'd0;
         source_pixel_2_r <= 32'd0;
         target_pixel_1_r <= 32'd0;
@@ -504,7 +506,7 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
         state_r <= state_w;
         epoch_r <= epoch_w;
         iteration_r <= iteration_w;
-        source_base_addr_r <= source_base_addr_w;
+        target_base_addr_r <= target_base_addr_w;
         source_pixel_1_r <= source_pixel_1_w;
         source_pixel_2_r <= source_pixel_2_w;
         target_pixel_1_r <= target_pixel_1_w;

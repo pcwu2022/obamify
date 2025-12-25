@@ -320,8 +320,8 @@ SDRAM_control	sdram_ctrl_0	(
 	// FIFO Write Side 2: from Memory Transfer
 	.WR2_DATA(SRAM_to_SDRAM_data),          			// Data Input
 	.WR2(SRAM_to_SDRAM_valid),          				// Write Request
-	.WR2_ADDR(23'd16384*(iter_cnt_r+1)),     				// Write Start Address
-	.WR2_MAX_ADDR(23'd16384*(iter_cnt_r+2)), 				// Write Max Address
+	.WR2_ADDR(23'd16384),     				// Write Start Address
+	.WR2_MAX_ADDR(23'h7FFFFF), 				// Write Max Address
 	.WR2_LENGTH(8'd128),									// Write Burst Length
 	.WR2_LOAD(!DLY_RST_0),     								// Write FIFO Clear
 	.WR2_CLK(CLOCK_50),      								// Write FIFO Clock
