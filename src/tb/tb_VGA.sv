@@ -9,6 +9,7 @@ module tb_VGA ();
   logic [21:0] oAddress;
   logic oRequest;
   logic oHS, oVS, oSYNC, oBLANK, oCLOCK;
+  logic odone;
   VGA vga0 (
     .iRed(),
     .iGreen(),
@@ -24,6 +25,7 @@ module tb_VGA ();
     .oVGA_SYNC(oSYNC),
     .oVGA_BLANK(oBLANK),
     .oVGA_CLOCK(oCLOCK),
+    .o_done(odone),
 	//	Control Signal
     .iCLK(clk),
     .iRST_N	(rst_n));
