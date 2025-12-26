@@ -13,7 +13,7 @@ module SDRAM_datapath (
 always_ff @(posedge CLK or negedge RESET_N)
 begin
         if (RESET_N == 0) 
-                                DQM <= `DSIZE/8-1'hF;
+                                DQM <= 4'hF;
         else
                                 DQM <= DM;                 
 end

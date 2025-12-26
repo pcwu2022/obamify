@@ -17,7 +17,7 @@ module SRAM_control (
     input        [15:0] i_ob_data,
     output  logic     [15:0] o_ob_data,
     // SRAM interface
-    inout        [15:0] SRAM_DQ,
+    inout  wire      [15:0] SRAM_DQ,
     output logic      [19:0] SRAM_ADDR,
     output logic             SRAM_CE_N,
     output              SRAM_OE_N,
